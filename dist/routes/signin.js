@@ -16,6 +16,16 @@ const express_1 = __importDefault(require("express"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const user_1 = require("../models/user");
 const router = express_1.default.Router();
+const ts_mailgun_1 = require("ts-mailgun");
+const mailer = new ts_mailgun_1.NodeMailgun();
+mailer.apiKey = 'key-c8d12b7428fbe666e074108aaa0820bc' || 'key-yourkeyhere';
+mailer.domain = 'mozartpay.com';
+mailer.options = {
+    host: 'api.eu.mailgun.net'
+};
+mailer.fromEmail = 'hi@ogtechnologies.co';
+mailer.fromTitle = 'MozartPay';
+mailer.init();
 router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     res.header("Access-Control-Allow-Origin", '*');
     res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
@@ -34,6 +44,17 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         if (!passwordMatch) {
             return res.status(401).json({ message: 'Incorrect password. Please check your email and password.' });
         }
+        // Send email notification
+        mailer
+            .send(email, 'MozartPay', `We're verifying a recent sign-in for ${email}:<br><br>` +
+            `Timestamp: ${new Date().toUTCString()}<br>` +
+            `IP Address: ${req.ip}<br>` +
+            `User agent: ${req.get('User-Agent')}<br><br>` +
+            "You're receiving this message because of a successful sign-in from a device that we didnt recognize. If you believe that this sign-in is suspicious, please reset your password immediately.<br><br>" +
+            "If you're aware of this sign-in, please disregard this notice. This can happen when you use your browser's incognito or private browsing mode or clear your cookies.<br><br>" +
+            "Thanks,<br><br>")
+            .then((result) => console.log('Done', result))
+            .catch((error) => console.error('Error: ', error));
         // If user exists and password matches, send the user information in the response
         return res.status(200).json({
             message: 'Login successful!',

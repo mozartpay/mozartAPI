@@ -8,6 +8,7 @@ const db_1 = __importDefault(require("./db"));
 const payment_1 = __importDefault(require("./routes/payment"));
 const signin_1 = __importDefault(require("./routes/signin"));
 const signup_1 = __importDefault(require("./routes/signup"));
+const order_1 = __importDefault(require("./routes/order"));
 const profile_1 = __importDefault(require("./routes/profile"));
 const cors_1 = __importDefault(require("cors"));
 const body_parser_1 = __importDefault(require("body-parser"));
@@ -24,6 +25,7 @@ app.use('/api/airtm', payment_1.default);
 app.use('/api/signin', signin_1.default);
 app.use('/api/signup', signup_1.default);
 app.use('/api/profile', profile_1.default);
+app.use('/api/v1', order_1.default);
 app.get("/hi", (req, res) => {
     res.send("BYEEE!!");
 });
