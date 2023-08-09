@@ -11,5 +11,7 @@ const userSchema = new mongoose_1.default.Schema({
     name: { type: String, required: false },
     image: { type: String },
     bio: { type: String },
+    resetToken: { type: String },
+    resetTokenExpiration: { type: Date },
 });
 exports.User = mongoose_1.default.model('User', userSchema);
