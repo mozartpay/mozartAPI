@@ -24,7 +24,7 @@ mailer.domain = 'mozartpay.com';
 mailer.options = {
     host: 'api.eu.mailgun.net'
 };
-mailer.fromEmail = 'hi@ogtechnologies.co';
+mailer.fromEmail = 'admin@mozartpay.com';
 mailer.fromTitle = 'MozartPay';
 mailer.init();
 router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -51,7 +51,7 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             `Timestamp: ${new Date().toUTCString()}<br>` +
             `IP Address: ${req.ip}<br>` +
             `User agent: ${req.get('User-Agent')}<br><br>` +
-            "You're receiving this message because of a successful sign-in from a device that we didnt recognize. If you believe that this sign-in is suspicious, please reset your password immediately.<br><br>" +
+            "You're receiving this message because of a successful sign-in from a device that we didnt recognize. If you believe that this sign-in is suspicious, please <a href='https://www.mozartpay.com/forgot-password'>Reset Password</a>` immediately.<br><br>" +
             "If you're aware of this sign-in, please disregard this notice. This can happen when you use your browser's incognito or private browsing mode or clear your cookies.<br><br>" +
             "Thanks,<br><br>")
             .then((result) => console.log('Done', result))
@@ -75,7 +75,7 @@ function sendResetPasswordEmail(email, resetToken) {
     const resetURL = `https://www.mozartpay.com/reset-password?token=${resetToken}`;
     mailer
         .send(email, 'Reset Password', `<p>Please click the following link to reset your password:</p>
-  <a href="http://localhost:3000/reset-password?token=${resetToken}">Reset Password</a>`)
+  <a href="https://www.mozartpay.com/reset-password?token=${resetToken}">Reset Password</a>`)
         .then((result) => console.log('Done', result))
         .catch((error) => console.error('Error: ', error));
 }
@@ -103,7 +103,6 @@ router.post('/reset-password', (req, res) => __awaiter(void 0, void 0, void 0, f
     }
 }));
 router.post('/reset-password/:token', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log('hiiiiiii');
     const { token } = req.params;
     const { password } = req.body;
     try {
