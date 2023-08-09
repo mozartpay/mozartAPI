@@ -10,7 +10,7 @@ mailer.domain = 'mozartpay.com';
 mailer.options = {
 	host: 'api.eu.mailgun.net'
 };
-mailer.fromEmail = 'hi@ogtechnologies.co';
+mailer.fromEmail = 'admin@mozartpay.com';
 mailer.fromTitle = 'MozartPay';
 mailer.init();
 
