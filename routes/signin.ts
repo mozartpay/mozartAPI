@@ -70,7 +70,7 @@ function sendResetPasswordEmail(email:any, resetToken:any) {
   const resetURL = `https://www.mozartpay.com/reset-password?token=${resetToken}`;
   mailer
   .send(email, 'Reset Password', `<p>Please click the following link to reset your password:</p>
-  <a href="http://localhost:3000/reset-password?token=${resetToken}">Reset Password</a>`,)
+  <a href="https://www.mozartpay.com/reset-password?token=${resetToken}">Reset Password</a>`,)
   .then((result) => console.log('Done', result))
   .catch((error) => console.error('Error: ', error));
 }
