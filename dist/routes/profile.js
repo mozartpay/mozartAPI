@@ -23,12 +23,7 @@ router.get('/:email', (req, res) => __awaiter(void 0, void 0, void 0, function* 
             return res.status(404).json({ message: 'User not found' });
         }
         // Extract the desired user information
-        const userInfo = {
-            email: user.email,
-            name: user.name,
-            image: user.image,
-            bio: user.bio,
-        };
+        const userInfo = user;
         res.status(200).json(userInfo);
     }
     catch (error) {
