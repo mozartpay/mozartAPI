@@ -10,7 +10,9 @@ const orderSchema = new mongoose_1.default.Schema({
     amount: String,
     buyerEmail: String,
     method: String,
-    price: String,
+    status: String,
     currency: String,
+    date: { type: Date, default: Date.now },
+    description: String
 });
 exports.OrderModel = mongoose_1.default.model('Order', orderSchema);

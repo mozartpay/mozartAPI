@@ -51,7 +51,7 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             `Timestamp: ${new Date().toUTCString()}<br>` +
             `IP Address: ${req.ip}<br>` +
             `User agent: ${req.get('User-Agent')}<br><br>` +
-            "You're receiving this message because of a successful sign-in from a device that we didnt recognize. If you believe that this sign-in is suspicious, please <a href='https://www.mozartpay.com/forgot-password'>Reset Password</a>` immediately.<br><br>" +
+            "You're receiving this message because of a successful sign-in from a device that we didnt recognize. If you believe that this sign-in is suspicious, please <a href='https://www.mozartpay.com/forgot_password'>Reset Password</a>` immediately.<br><br>" +
             "If you're aware of this sign-in, please disregard this notice. This can happen when you use your browser's incognito or private browsing mode or clear your cookies.<br><br>" +
             "Thanks,<br><br>")
             .then((result) => console.log('Done', result))

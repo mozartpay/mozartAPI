@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const user_1 = require("../models/user");
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const router = express_1.default.Router();
 router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     res.header("Access-Control-Allow-Origin", '*');
@@ -38,12 +39,16 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             name: fullname
         });
         yield newUser.save();
+        const secretKey = process.env.JWT_SECRET_KEY;
+        // Generate a JWT token
+        const token = jsonwebtoken_1.default.sign({ userId: newUser._id, email: newUser.email }, 'KGUTUTFjglig454JHUZFULZBGWhbjhhbluJHSKJDVHzgtzdvcbs7525vkj', { expiresIn: '99h' });
         return res.status(201).json({
             message: 'Signup successful!',
             user: {
                 email: newUser.email,
                 name: newUser.name,
             },
+            token,
         });
     }
     catch (error) {

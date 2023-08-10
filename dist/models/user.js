@@ -13,5 +13,6 @@ const userSchema = new mongoose_1.default.Schema({
     bio: { type: String },
     resetToken: { type: String },
     resetTokenExpiration: { type: Date },
+    token: String,
 });
 exports.User = mongoose_1.default.model('User', userSchema);

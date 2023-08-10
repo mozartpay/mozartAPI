@@ -65,4 +65,15 @@ router.patch('/orders/:orderId', (req, res) => __awaiter(void 0, void 0, void 0,
         res.status(400).json({ message: 'Error updating order' });
     }
 }));
+// GET orders by email
+router.get('/order/:email', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const email = req.params.email;
+        const orders = yield order_1.OrderModel.find({ buyerEmail: email }).exec();
+        res.json(orders);
+    }
+    catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+}));
 exports.default = router;
