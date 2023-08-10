@@ -56,4 +56,15 @@ router.patch('/orders/:orderId', async (req: Request, res: Response) => {
   }
 });
 
+// GET orders by email
+router.get('/orders/:email', async (req, res) => {
+  try {
+    const email = req.params.email;
+    const orders: Order[] = await OrderModel.find({ buyerEmail: email }).exec();
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 export default router;

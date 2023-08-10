@@ -5,8 +5,10 @@ export interface Order extends Document {
   amount: string;
   buyerEmail: string;
   method: string;
-  price: string;
+  status : string;
   currency: string;
+  date:Date;
+  description:string;
 }
 
 const orderSchema = new mongoose.Schema<Order>({
@@ -14,8 +16,10 @@ const orderSchema = new mongoose.Schema<Order>({
   amount: String,
   buyerEmail: String,
   method: String,
-  price: String,
+  status : String,
   currency: String,
+  date:Date,
+  description:String
 });
 
 export const OrderModel = mongoose.model<Order>('Order', orderSchema);
