@@ -57,7 +57,7 @@ router.patch('/orders/:orderId', async (req: Request, res: Response) => {
 });
 
 // GET orders by email
-router.get('/orders/:email', async (req, res) => {
+router.get('/order/:email', async (req, res) => {
   try {
     const email = req.params.email;
     const orders: Order[] = await OrderModel.find({ buyerEmail: email }).exec();
