@@ -18,7 +18,7 @@ const orderSchema = new mongoose.Schema<Order>({
   method: String,
   status : String,
   currency: String,
-  date:Date,
+  date: { type: Date, default: Date.now },
   description:String
 });
 
