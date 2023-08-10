@@ -41,7 +41,6 @@
     "uuid": "^9.0.0"
   },
   "devDependencies": {
-    "@types/jsonwebtoken": "^9.0.2",
     "nodemon": "^2.0.19"
   }
 }
