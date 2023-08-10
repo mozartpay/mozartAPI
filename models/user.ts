@@ -8,6 +8,7 @@ interface UserDoc extends mongoose.Document {
   bio: string;
   resetToken:string;
   resetTokenExpiration: Date;
+  token:string;
 }
 
 const userSchema = new mongoose.Schema<UserDoc>({
@@ -18,6 +19,7 @@ const userSchema = new mongoose.Schema<UserDoc>({
   bio: { type: String },
   resetToken: { type: String},
   resetTokenExpiration: {type: Date},
+  token: String,
 });
 
 export const User = mongoose.model<UserDoc>('User', userSchema);
