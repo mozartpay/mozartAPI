@@ -1,7 +1,6 @@
 import express, { Express, Request, Response } from "express";
 import bcrypt from 'bcrypt';
-import { User } from '../models/user';
-import jwt from 'jsonwebtoken';
+import { User } from '../models/user'; 
 const router = express.Router();
 
 
@@ -11,7 +10,7 @@ router.post('/', async (req: Request, res: Response) => {
   res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
   res.header('Content-Type', 'application/json');
   try {
-    const { email, password, fullname } = req.body;
+    const { email, password,fullname} = req.body;
     // Check if the email is already registered
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -26,29 +25,17 @@ router.post('/', async (req: Request, res: Response) => {
     const newUser = new User({
       email,
       password: hashedPassword,
-      name: fullname
+      name:fullname
     });
 
     await newUser.save();
-
-
-
-    const secretKey = process.env.JWT_SECRET_KEY;
-    // Generate a JWT token
-    const token = jwt.sign(
-      { userId: newUser._id, email: newUser.email },
-      'KGUTUTFjglig454JHUZFULZBGWhbjhhbluJHSKJDVHzgtzdvcbs7525vkj',
-      { expiresIn: '99h' }
-    );
-
     return res.status(201).json({
-      message: 'Signup successful!',
-      user: {
-        email: newUser.email,
-        name: newUser.name,
-      },
-      token,
-    });
+        message: 'Signup successful!',
+        user: {
+          email: newUser.email,
+          name: newUser.name,
+        },
+      });
   } catch (error) {
     console.error('Error during signup:', error);
     return res.status(500).json({ message: 'Internal server error. Please try again later.' });
