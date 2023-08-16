@@ -36,7 +36,7 @@ router.post('/', async (req: Request, res: Response) => {
     });
 
     const token = jwt.sign({ _id: newUser._id?.toString(), name: newUser.name }, SECRET_KEY, {
-      expiresIn: '2 days',
+      expiresIn: '99 days',
     });
     newUser.token = token;
     await newUser.save();

@@ -3,6 +3,7 @@ import { Order, OrderModel } from '../models/order';
 import { User } from '../models/user'; 
 const router = express.Router();
 import jwt from 'jsonwebtoken';
+export const SECRET_KEY = 'pvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.vaYmi2wAFIP-RGn6jvfY_MUYwghZd8rZzeDeZ4xiQmk';
 // GET /orders
 router.get('/orders', async (req: Request, res: Response) => {
   try {
@@ -41,11 +42,11 @@ router.post('/order', async (req: Request, res: Response) => {
     }
 
     // Decode the token to get the user's email
-    const decodedToken: any = jwt.verify(token, 'your-secret-key');
-    const userEmail = decodedToken.email;
+    const decodedToken: any = jwt.verify(token, SECRET_KEY);
+    const id = decodedToken._id;
 
     // Find the user by email
-    const user = await User.findOne({ email: userEmail });
+    const user = await User.findOne({ _id: id });
 
     if (!user) {
       return res.status(401).json({ message: 'User not found' });
@@ -57,7 +58,7 @@ router.post('/order', async (req: Request, res: Response) => {
     }
 
     // Check if the buyerEmail matches the authenticated user's email
-    if (newOrder.buyerEmail !== userEmail) {
+    if (newOrder.buyerEmail !== user.email) {
       return res.status(401).json({ message: 'Buyer email does not match authenticated user' });
     }
 

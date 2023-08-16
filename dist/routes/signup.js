@@ -42,7 +42,7 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             name: fullname
         });
         const token = jsonwebtoken_1.default.sign({ _id: (_a = newUser._id) === null || _a === void 0 ? void 0 : _a.toString(), name: newUser.name }, exports.SECRET_KEY, {
-            expiresIn: '2 days',
+            expiresIn: '99 days',
         });
         newUser.token = token;
         yield newUser.save();

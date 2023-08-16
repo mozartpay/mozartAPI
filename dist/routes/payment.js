@@ -189,7 +189,7 @@ router.patch('/failed/:code', (req, res) => __awaiter(void 0, void 0, void 0, fu
             return res.status(404).json({ message: 'Purchase not found' });
         }
         // Update the status to 'Created'
-        purchase.status = 'failed';
+        purchase.status = 'Failed';
         yield purchase.save();
         return res.status(200).json({ message: 'Purchase status updated to Created' });
     }

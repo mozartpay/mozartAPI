@@ -12,9 +12,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.SECRET_KEY = void 0;
 const express_1 = __importDefault(require("express"));
 const order_1 = require("../models/order");
+const user_1 = require("../models/user");
 const router = express_1.default.Router();
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+exports.SECRET_KEY = 'pvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.vaYmi2wAFIP-RGn6jvfY_MUYwghZd8rZzeDeZ4xiQmk';
 // GET /orders
 router.get('/orders', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -41,12 +45,36 @@ router.get('/orders/:orderId', (req, res) => __awaiter(void 0, void 0, void 0, f
 }));
 // POST /order
 router.post('/order', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     const newOrder = req.body;
     try {
+        // Extract the token from the headers
+        const token = (_a = req.header('Authorization')) === null || _a === void 0 ? void 0 : _a.replace('Bearer ', '');
+        if (!token) {
+            return res.status(401).json({ message: 'Authentication token missing' });
+        }
+        // Decode the token to get the user's email
+        const decodedToken = jsonwebtoken_1.default.verify(token, exports.SECRET_KEY);
+        const id = decodedToken._id;
+        // Find the user by email
+        const user = yield user_1.User.findOne({ _id: id });
+        if (!user) {
+            return res.status(401).json({ message: 'User not found' });
+        }
+        // Check if the user's token matches the provided token
+        if (user.token !== token) {
+            return res.status(401).json({ message: 'Invalid authentication token' });
+        }
+        // Check if the buyerEmail matches the authenticated user's email
+        if (newOrder.buyerEmail !== user.email) {
+            return res.status(401).json({ message: 'Buyer email does not match authenticated user' });
+        }
+        // Create the order
         const order = yield order_1.OrderModel.create(newOrder);
         res.status(201).json({ message: 'Order created successfully', order });
     }
     catch (error) {
+        console.error('Error creating order:', error);
         res.status(400).json({ message: 'Error creating order' });
     }
 }));
