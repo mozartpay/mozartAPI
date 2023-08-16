@@ -16,6 +16,16 @@ const express_1 = __importDefault(require("express"));
 const axios_1 = __importDefault(require("axios"));
 const purchase_1 = require("../models/purchase");
 const uuid_1 = require("uuid");
+const ts_mailgun_1 = require("ts-mailgun");
+const mailer = new ts_mailgun_1.NodeMailgun();
+mailer.apiKey = 'key-c8d12b7428fbe666e074108aaa0820bc' || 'key-yourkeyhere';
+mailer.domain = 'mozartpay.com';
+mailer.options = {
+    host: 'api.eu.mailgun.net'
+};
+mailer.fromEmail = 'admin@mozartpay.com';
+mailer.fromTitle = 'MozartPay';
+mailer.init();
 const router = express_1.default.Router();
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
@@ -58,6 +68,19 @@ router.post('/create-payment', (req, res) => __awaiter(void 0, void 0, void 0, f
         const payment = response.data;
         const savedPurchase = yield purchase_1.PurchaseModel.create(payment);
         console.log('Purchase created successfully:', savedPurchase);
+        // Send email notification
+        mailer
+            .send(email, 'MozartPay', `New Payment has been done with this account:<br><br>` +
+            `Timestamp: ${new Date().toUTCString()}<br>` +
+            `IP Address: ${req.ip}<br>` +
+            `User agent: ${req.get('User-Agent')}<br><br>` +
+            `Amount: ${amount}<br><br>` +
+            `Transaction code: ${purchaseData.code}<br><br>` +
+            "You're receiving this message because of a successful payment has been done. If you believe that this payment is suspicious, please <a href='https://www.mozartpay.com/forgot_password'>Reset Password</a>` immediately.<br><br>" +
+            "If you're aware of this payment, please disregard this notice.<br><br>" +
+            "Thanks,<br><br>")
+            .then((result) => console.log('Done', result))
+            .catch((error) => console.error('Error: ', error));
         res.status(200).json({ message: 'Purchase created successfully', data: savedPurchase });
     }
     catch (error) {
