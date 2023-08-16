@@ -149,4 +149,71 @@ router.get('/purchases/:email', async (req: Request, res: Response) => {
   }
 });
 
+router.patch('/confirmed/:code', async (req: Request, res: Response) => {
+  try {
+    const { code } = req.params;
+
+
+    // Find the purchase by ID
+    const purchase = await PurchaseModel.findOne({ code: code.trim() }).exec();
+    if (!purchase) {
+      return res.status(404).json({ message: 'Purchase not found' });
+    }
+
+    // Update the status to 'Created'
+    purchase.status = 'Confirmed';
+    await purchase.save();
+
+    return res.status(200).json({ message: 'Purchase status updated to Created' });
+  } catch (error) {
+    console.error('Error updating purchase status:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+router.patch('/rejected/:code', async (req: Request, res: Response) => {
+  try {
+    const { code } = req.params;
+
+
+    // Find the purchase by ID
+    const purchase = await PurchaseModel.findOne({ code: code.trim() }).exec();
+    if (!purchase) {
+      return res.status(404).json({ message: 'Purchase not found' });
+    }
+
+    // Update the status to 'Created'
+    purchase.status = 'Rejected';
+    await purchase.save();
+
+    return res.status(200).json({ message: 'Purchase status updated to Created' });
+  } catch (error) {
+    console.error('Error updating purchase status:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+
+router.patch('/failed/:code', async (req: Request, res: Response) => {
+  try {
+    const { code } = req.params;
+
+
+    // Find the purchase by ID
+    const purchase = await PurchaseModel.findOne({ code: code.trim() }).exec();
+    if (!purchase) {
+      return res.status(404).json({ message: 'Purchase not found' });
+    }
+
+    // Update the status to 'Created'
+    purchase.status = 'failed';
+    await purchase.save();
+
+    return res.status(200).json({ message: 'Purchase status updated to Created' });
+  } catch (error) {
+    console.error('Error updating purchase status:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 export default router;

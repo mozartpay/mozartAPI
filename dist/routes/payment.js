@@ -144,4 +144,58 @@ router.get('/purchases/:email', (req, res) => __awaiter(void 0, void 0, void 0, 
         res.status(500).json({ message: 'Internal server error' });
     }
 }));
+router.patch('/confirmed/:code', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { code } = req.params;
+        // Find the purchase by ID
+        const purchase = yield purchase_1.PurchaseModel.findOne({ code: code.trim() }).exec();
+        if (!purchase) {
+            return res.status(404).json({ message: 'Purchase not found' });
+        }
+        // Update the status to 'Created'
+        purchase.status = 'Confirmed';
+        yield purchase.save();
+        return res.status(200).json({ message: 'Purchase status updated to Created' });
+    }
+    catch (error) {
+        console.error('Error updating purchase status:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+}));
+router.patch('/rejected/:code', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { code } = req.params;
+        // Find the purchase by ID
+        const purchase = yield purchase_1.PurchaseModel.findOne({ code: code.trim() }).exec();
+        if (!purchase) {
+            return res.status(404).json({ message: 'Purchase not found' });
+        }
+        // Update the status to 'Created'
+        purchase.status = 'Rejected';
+        yield purchase.save();
+        return res.status(200).json({ message: 'Purchase status updated to Created' });
+    }
+    catch (error) {
+        console.error('Error updating purchase status:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+}));
+router.patch('/failed/:code', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { code } = req.params;
+        // Find the purchase by ID
+        const purchase = yield purchase_1.PurchaseModel.findOne({ code: code.trim() }).exec();
+        if (!purchase) {
+            return res.status(404).json({ message: 'Purchase not found' });
+        }
+        // Update the status to 'Created'
+        purchase.status = 'failed';
+        yield purchase.save();
+        return res.status(200).json({ message: 'Purchase status updated to Created' });
+    }
+    catch (error) {
+        console.error('Error updating purchase status:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+}));
 exports.default = router;
