@@ -206,7 +206,7 @@ router.patch('/failed/:code', async (req: Request, res: Response) => {
     }
 
     // Update the status to 'Created'
-    purchase.status = 'failed';
+    purchase.status = 'Failed';
     await purchase.save();
 
     return res.status(200).json({ message: 'Purchase status updated to Created' });
