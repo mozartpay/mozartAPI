@@ -1,8 +1,8 @@
 import express, { Request, Response } from 'express';
 import { Order, OrderModel } from '../models/order'; 
-
+import { User } from '../models/user'; 
 const router = express.Router();
-
+import jwt from 'jsonwebtoken';
 // GET /orders
 router.get('/orders', async (req: Request, res: Response) => {
   try {
@@ -30,12 +30,43 @@ router.get('/orders/:orderId', async (req: Request, res: Response) => {
 
 // POST /order
 router.post('/order', async (req: Request, res: Response) => {
-  const newOrder: Order = req.body;
+  const newOrder = req.body;
 
   try {
+    // Extract the token from the headers
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+
+    if (!token) {
+      return res.status(401).json({ message: 'Authentication token missing' });
+    }
+
+    // Decode the token to get the user's email
+    const decodedToken: any = jwt.verify(token, 'your-secret-key');
+    const userEmail = decodedToken.email;
+
+    // Find the user by email
+    const user = await User.findOne({ email: userEmail });
+
+    if (!user) {
+      return res.status(401).json({ message: 'User not found' });
+    }
+
+    // Check if the user's token matches the provided token
+    if (user.token !== token) {
+      return res.status(401).json({ message: 'Invalid authentication token' });
+    }
+
+    // Check if the buyerEmail matches the authenticated user's email
+    if (newOrder.buyerEmail !== userEmail) {
+      return res.status(401).json({ message: 'Buyer email does not match authenticated user' });
+    }
+
+    // Create the order
     const order = await OrderModel.create(newOrder);
+
     res.status(201).json({ message: 'Order created successfully', order });
   } catch (error) {
+    console.error('Error creating order:', error);
     res.status(400).json({ message: 'Error creating order' });
   }
 });
