@@ -1,3 +1,2 @@
-
 declare module 'jsonwebtoken';
 

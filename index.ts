@@ -7,6 +7,8 @@ import order from './routes/order';
 import profile from './routes/profile';
 import cors from 'cors';
 import bodyParser from 'body-parser';
+import subscriptionRoutes from './routes/subscription';
+
 
 const port = process.env.PORT || '8000'
 const app: Express = express();
@@ -26,7 +28,7 @@ app.use('/api/signin', signinRouter);
 app.use('/api/signup', signupRouter);
 app.use('/api/profile', profile);
 app.use('/api/v1', order);
-
+app.use('/api/subscribe', subscriptionRoutes);
 
 
 app.get("/hi", (req: Request, res: Response) => {
