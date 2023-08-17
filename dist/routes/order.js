@@ -19,7 +19,6 @@ const user_1 = require("../models/user");
 const router = express_1.default.Router();
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 exports.SECRET_KEY = 'pvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.vaYmi2wAFIP-RGn6jvfY_MUYwghZd8rZzeDeZ4xiQmk';
-// GET /orders
 router.get('/orders', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const orders = yield order_1.OrderModel.find();
@@ -29,7 +28,6 @@ router.get('/orders', (req, res) => __awaiter(void 0, void 0, void 0, function* 
         res.status(500).json({ message: 'Error fetching orders' });
     }
 }));
-// GET /orders/:orderId
 router.get('/orders/:orderId', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const orderId = req.params.orderId;
     try {
@@ -43,7 +41,6 @@ router.get('/orders/:orderId', (req, res) => __awaiter(void 0, void 0, void 0, f
         res.status(500).json({ message: 'Error fetching order' });
     }
 }));
-// POST /order
 router.post('/order', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const newOrder = req.body;
@@ -78,7 +75,6 @@ router.post('/order', (req, res) => __awaiter(void 0, void 0, void 0, function* 
         res.status(400).json({ message: 'Error creating order' });
     }
 }));
-// PATCH /orders/:orderId
 router.patch('/orders/:orderId', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const orderId = req.params.orderId;
     const updatedOrder = req.body;
@@ -93,7 +89,6 @@ router.patch('/orders/:orderId', (req, res) => __awaiter(void 0, void 0, void 0,
         res.status(400).json({ message: 'Error updating order' });
     }
 }));
-// GET orders by email
 router.get('/order/:email', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const email = req.params.email;
