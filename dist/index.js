@@ -13,6 +13,7 @@ const profile_1 = __importDefault(require("./routes/profile"));
 const cors_1 = __importDefault(require("cors"));
 const body_parser_1 = __importDefault(require("body-parser"));
 const subscription_1 = __importDefault(require("./routes/subscription"));
+require('dotenv').config();
 const port = process.env.PORT || '8000';
 const app = (0, express_1.default)();
 app.use((0, cors_1.default)());

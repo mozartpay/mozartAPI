@@ -5,7 +5,7 @@ import crypto from 'crypto';
 const router = express.Router();
 import { NodeMailgun } from 'ts-mailgun';
 const mailer = new NodeMailgun();
-mailer.apiKey = 'key-c8d12b7428fbe666e074108aaa0820bc' || 'key-yourkeyhere'
+mailer.apiKey = process.env.mailer || 'key-yourkeyhere'
 mailer.domain = 'mozartpay.com';
 mailer.options = {
 	host: 'api.eu.mailgun.net'

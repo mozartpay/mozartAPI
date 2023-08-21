@@ -8,7 +8,7 @@ import profile from './routes/profile';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import subscriptionRoutes from './routes/subscription';
-
+require('dotenv').config();
 
 const port = process.env.PORT || '8000'
 const app: Express = express();

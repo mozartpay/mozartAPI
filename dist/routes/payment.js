@@ -18,7 +18,7 @@ const purchase_1 = require("../models/purchase");
 const uuid_1 = require("uuid");
 const ts_mailgun_1 = require("ts-mailgun");
 const mailer = new ts_mailgun_1.NodeMailgun();
-mailer.apiKey = 'key-c8d12b7428fbe666e074108aaa0820bc' || 'key-yourkeyhere';
+mailer.apiKey = process.env.mailer || 'key-yourkeyhere';
 mailer.domain = 'mozartpay.com';
 mailer.options = {
     host: 'api.eu.mailgun.net'
@@ -36,8 +36,8 @@ router.post('/create-payment', (req, res) => __awaiter(void 0, void 0, void 0, f
     res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
     res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
     res.header('Content-Type', 'application/json');
-    const apiKey = '1dba7548-388f-4d94-bf37-b1fb0157ced1';
-    const apiSecret = 'YQFQYziQsWfzedHzizx7KjCQtDCBRrjHgUhJjIBaIJwZMtAgZCSNCbs2ywSIEdQDvX7rRjrMoinmuYoU';
+    const apiKey = process.env.apiKey;
+    const apiSecret = process.env.apiSecret;
     const credentials = Buffer.from(`${apiKey}:${apiSecret}`).toString('base64');
     const authorizationHeader = `Basic ${credentials}`;
     const { amount } = req.body;

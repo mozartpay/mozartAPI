@@ -18,7 +18,7 @@ const order_1 = require("../models/order");
 const user_1 = require("../models/user");
 const router = express_1.default.Router();
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-exports.SECRET_KEY = 'pvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.vaYmi2wAFIP-RGn6jvfY_MUYwghZd8rZzeDeZ4xiQmk';
+exports.SECRET_KEY = process.env.SECRET_KEY;
 router.get('/orders', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const orders = yield order_1.OrderModel.find();

@@ -2,12 +2,9 @@ import express, { Express, Request, Response } from "express";
 import bcrypt from 'bcrypt';
 import { User } from '../models/user';
 import jwt from 'jsonwebtoken';
-import Secret from 'jsonwebtoken';
-import JwtPayload from 'jsonwebtoken';
 import initMB from 'messagebird';
 const router = express.Router();
-const messagebird = initMB('isEuyTVAMCuov4hcWmG8qqf0B');
-export const SECRET_KEY = 'pvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.vaYmi2wAFIP-RGn6jvfY_MUYwghZd8rZzeDeZ4xiQmk';
+require('dotenv').config();
 export interface CustomRequest extends Request {
   token: string;
 }
@@ -38,12 +35,16 @@ router.post('/', async (req: Request, res: Response) => {
       number: number,
       verificationCode:verificationCode,
     });
-
-    const token = jwt.sign({ _id: newUser._id?.toString(), name: newUser.name }, SECRET_KEY, {
+  
+    const token = jwt.sign({ _id: newUser._id?.toString(), name: newUser.name }, 'pvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.vaYmi2wAFIP-RGn6jvfY_MUYwghZd8rZzeDeZ4xiQmk', {
       expiresIn: '99 days',
     });
     newUser.token = token;
     const savedUser = await newUser.save();
+
+ 
+    // Initialize the MessageBird client
+    const messagebird = initMB('txZ7iSUHutKrn8eXHZVMTaGxB');
 
     
     const params = {

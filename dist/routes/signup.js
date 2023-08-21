@@ -12,15 +12,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SECRET_KEY = void 0;
 const express_1 = __importDefault(require("express"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const user_1 = require("../models/user");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const messagebird_1 = __importDefault(require("messagebird"));
 const router = express_1.default.Router();
-const messagebird = (0, messagebird_1.default)('isEuyTVAMCuov4hcWmG8qqf0B');
-exports.SECRET_KEY = 'pvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.vaYmi2wAFIP-RGn6jvfY_MUYwghZd8rZzeDeZ4xiQmk';
+require('dotenv').config();
 router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     res.header("Access-Control-Allow-Origin", '*');
@@ -47,11 +45,13 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             number: number,
             verificationCode: verificationCode,
         });
-        const token = jsonwebtoken_1.default.sign({ _id: (_a = newUser._id) === null || _a === void 0 ? void 0 : _a.toString(), name: newUser.name }, exports.SECRET_KEY, {
+        const token = jsonwebtoken_1.default.sign({ _id: (_a = newUser._id) === null || _a === void 0 ? void 0 : _a.toString(), name: newUser.name }, 'pvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.vaYmi2wAFIP-RGn6jvfY_MUYwghZd8rZzeDeZ4xiQmk', {
             expiresIn: '99 days',
         });
         newUser.token = token;
         const savedUser = yield newUser.save();
+        // Initialize the MessageBird client
+        const messagebird = (0, messagebird_1.default)('txZ7iSUHutKrn8eXHZVMTaGxB');
         const params = {
             originator: 'MozartPay',
             recipients: [savedUser.number],
