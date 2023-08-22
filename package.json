@@ -31,18 +31,23 @@
     "concurrently": "^7.4.0",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
+    "currency-converter-lt": "^2.0.0",
     "dotenv": "^16.3.1",
+    "exchange-rates-api": "^1.1.0",
     "express": "^4.18.1",
     "form-data": "^4.0.0",
+    "i": "^0.3.7",
     "jsonwebtoken": "^9.0.1",
     "messagebird": "^3.5.0",
     "mongoose": "^7.4.2",
+    "npm": "^9.8.1",
     "rimraf": "^3.0.2",
     "ts-mailgun": "^0.5.1",
     "typescript": "^4.8.3",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
+    "@types/exchange-rates-api": "^1.0.0",
     "nodemon": "^2.0.19"
   }
 }
