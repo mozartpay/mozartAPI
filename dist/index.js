@@ -13,6 +13,8 @@ const profile_1 = __importDefault(require("./routes/profile"));
 const cors_1 = __importDefault(require("cors"));
 const body_parser_1 = __importDefault(require("body-parser"));
 const subscription_1 = __importDefault(require("./routes/subscription"));
+const convert_1 = __importDefault(require("./routes/convert"));
+require('dotenv').config();
 const port = process.env.PORT || '8000';
 const app = (0, express_1.default)();
 app.use((0, cors_1.default)());
@@ -28,6 +30,7 @@ app.use('/api/signup', signup_1.default);
 app.use('/api/profile', profile_1.default);
 app.use('/api/v1', order_1.default);
 app.use('/api/subscribe', subscription_1.default);
+app.use('/api/convert', convert_1.default);
 app.get("/hi", (req, res) => {
     res.send("BYEEE!!");
 });

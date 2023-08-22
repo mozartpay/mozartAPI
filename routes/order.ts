@@ -3,7 +3,7 @@ import { Order, OrderModel } from '../models/order';
 import { User } from '../models/user'; 
 const router = express.Router();
 import jwt from 'jsonwebtoken';
-export const SECRET_KEY = 'pvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.vaYmi2wAFIP-RGn6jvfY_MUYwghZd8rZzeDeZ4xiQmk';
+export const SECRET_KEY = process.env.SECRET_KEY;
 
 router.get('/orders', async (req: Request, res: Response) => {
   try {

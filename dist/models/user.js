@@ -14,5 +14,7 @@ const userSchema = new mongoose_1.default.Schema({
     resetToken: { type: String },
     resetTokenExpiration: { type: Date },
     token: String,
+    number: String,
+    verificationCode: String,
 });
 exports.User = mongoose_1.default.model('User', userSchema);
