@@ -9,6 +9,9 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import subscriptionRoutes from './routes/subscription';
 import Money from './routes/convert';
+import Transaction from './routes/transaction';
+import MoneyRequest from './routes/requestMoney';
+import Identity from './routes/identity';
 require('dotenv').config();
 
 const port = process.env.PORT || '8000'
@@ -31,7 +34,9 @@ app.use('/api/profile', profile);
 app.use('/api/v1', order);
 app.use('/api/subscribe', subscriptionRoutes);
 app.use('/api/convert', Money);
-
+app.use('/api/transaction', Transaction);
+app.use('/api/request', MoneyRequest);
+app.use('/api/identity', Identity);
 
 app.get("/hi", (req: Request, res: Response) => {
   res.send("BYEEE!!");
