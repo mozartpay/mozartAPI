@@ -43,7 +43,7 @@ router.post('/order', async (req: Request, res: Response) => {
     const decodedToken: any = jwt.verify(token, SECRET_KEY);
     const id = decodedToken._id;
 
-    // Find the user by email
+    // Find the user by email - olvis
     const user = await User.findOne({ _id: id });
 
     if (!user) {
