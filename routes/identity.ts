@@ -11,23 +11,18 @@ router.post('/', async (req: Request, res: Response) => {
   res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
   res.header('Content-Type', 'application/json');
 
-    const { email, documentType, document } = req.body;
-   
-  
-    try {
-      if (!document) {
-        return res.status(400).json({ error: 'No document uploaded.' });
-      }
-  
-      // Save identity information to MongoDB
-      const identity = new IdentityModel({ email, documentType, document });
-      await identity.save();
-  
-      res.status(200).json({ message: 'Identity Verification Request Has been sent !' });
-    } catch (error) {
-      console.error('Error saving identity:', error);
-      res.status(500).json({ error: 'An error occurred while saving identity.' });
-    }
-  });
-  
-  export default router;
+  const { email, documentType, document } = req.body;
+
+  console.log('hi')
+  try {
+    // Save identity information to MongoDB
+    const identity = new IdentityModel({ email, documentType, document });
+    await identity.save();
+    res.status(200).json({ message: 'Identity Verification Request Has been sent !' });
+  } catch (error) {
+    console.error('Error saving identity:', error);
+    res.status(500).json({ error: 'An error occurred while saving identity.' });
+  }
+});
+
+export default router;
