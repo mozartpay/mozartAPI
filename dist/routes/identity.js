@@ -24,15 +24,12 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { email, documentType, document } = req.body;
     console.log('hi');
     try {
-        console.log('save');
         // Save identity information to MongoDB
         const identity = new identity_1.default({ email, documentType, document });
         yield identity.save();
-        console.log('saved');
         res.status(200).json({ message: 'Identity Verification Request Has been sent !' });
     }
     catch (error) {
-        console.log('error');
         console.error('Error saving identity:', error);
         res.status(500).json({ error: 'An error occurred while saving identity.' });
     }
