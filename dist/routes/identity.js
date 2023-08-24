@@ -13,14 +13,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const multer_1 = __importDefault(require("multer"));
 const identity_1 = __importDefault(require("../models/identity"));
 const router = express_1.default.Router();
-// Configure Multer for file uploads
-const storage = multer_1.default.memoryStorage();
-const upload = (0, multer_1.default)({ storage });
 // API endpoint to handle identity verification
-router.post('/', upload.single('document'), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     res.header("Access-Control-Allow-Origin", '*');
     res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
     res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');

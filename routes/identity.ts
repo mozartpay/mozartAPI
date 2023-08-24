@@ -1,14 +1,11 @@
 import express, { Request, Response } from 'express';
-import multer from 'multer';
 import IdentityModel from '../models/identity';
 const router = express.Router();
 
-// Configure Multer for file uploads
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
+
 
 // API endpoint to handle identity verification
-router.post('/', upload.single('document'), async (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
   res.header("Access-Control-Allow-Origin", '*');
   res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
   res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
