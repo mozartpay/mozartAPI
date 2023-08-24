@@ -17,6 +17,10 @@ const express_1 = __importDefault(require("express"));
 const Transaction_1 = __importDefault(require("../models/Transaction"));
 const router = express_1.default.Router();
 router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    res.header("Access-Control-Allow-Origin", '*');
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+    res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
+    res.header('Content-Type', 'application/json');
     const { country, amount, receiverName, receiverEmail, senderEmail } = req.body;
     try {
         const newTransaction = new Transaction_1.default({

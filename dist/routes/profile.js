@@ -16,6 +16,10 @@ const express_1 = __importDefault(require("express"));
 const user_1 = require("../models/user");
 const router = express_1.default.Router();
 router.get('/:email', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    res.header("Access-Control-Allow-Origin", '*');
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+    res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
+    res.header('Content-Type', 'application/json');
     try {
         const email = req.params.email;
         const user = yield user_1.User.findOne({ email });

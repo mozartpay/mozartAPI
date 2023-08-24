@@ -19,6 +19,10 @@ const app = (0, express_1.default)();
 app.use(express_1.default.json());
 const currencyConverter = new CC();
 router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    res.header("Access-Control-Allow-Origin", '*');
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+    res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
+    res.header('Content-Type', 'application/json');
     const { amount, targetCurrency } = req.body;
     try {
         if (targetCurrency === 'COP') {

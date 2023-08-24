@@ -20,6 +20,10 @@ const router = express_1.default.Router();
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 exports.SECRET_KEY = process.env.SECRET_KEY;
 router.get('/orders', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    res.header("Access-Control-Allow-Origin", '*');
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+    res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
+    res.header('Content-Type', 'application/json');
     try {
         const orders = yield order_1.OrderModel.find();
         res.json(orders);
@@ -53,7 +57,7 @@ router.post('/order', (req, res) => __awaiter(void 0, void 0, void 0, function* 
         // Decode the token to get the user's email
         const decodedToken = jsonwebtoken_1.default.verify(token, exports.SECRET_KEY);
         const id = decodedToken._id;
-        // Find the user by email
+        // Find the user by email - olvis
         const user = yield user_1.User.findOne({ _id: id });
         if (!user) {
             return res.status(401).json({ message: 'User not found' });

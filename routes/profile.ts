@@ -3,6 +3,11 @@ import { User } from '../models/user';
 const router = express.Router();
 
 router.get('/:email', async (req: Request, res: Response) => {
+  res.header("Access-Control-Allow-Origin", '*');
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+  res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
+  res.header('Content-Type', 'application/json');
+
   try {
     const email = req.params.email;
 

@@ -5,6 +5,11 @@ import Transaction, { ITransaction } from '../models/Transaction';
 const router = express.Router();
 
 router.post('/', async (req: Request, res: Response) => {
+    res.header("Access-Control-Allow-Origin", '*');
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+    res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
+    res.header('Content-Type', 'application/json');
+  
     const { country, amount, receiverName, receiverEmail, senderEmail } = req.body;
 
     try {

@@ -6,6 +6,11 @@ import jwt from 'jsonwebtoken';
 export const SECRET_KEY = process.env.SECRET_KEY;
 
 router.get('/orders', async (req: Request, res: Response) => {
+  res.header("Access-Control-Allow-Origin", '*');
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+  res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
+  res.header('Content-Type', 'application/json');
+
   try {
     const orders = await OrderModel.find();
     res.json(orders);

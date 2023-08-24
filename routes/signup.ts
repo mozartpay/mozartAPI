@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 import initMB from 'messagebird';
 const router = express.Router();
 require('dotenv').config();
+
 export interface CustomRequest extends Request {
   token: string;
 }

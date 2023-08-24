@@ -9,6 +9,11 @@ const upload = multer({ storage });
 
 // API endpoint to handle identity verification
 router.post('/', upload.single('document'), async (req: Request, res: Response) => {
+  res.header("Access-Control-Allow-Origin", '*');
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+  res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
+  res.header('Content-Type', 'application/json');
+
     const { email, documentType } = req.body;
     const document = req.file ? req.file.buffer : null; // Handle the case when no file is uploaded
   
