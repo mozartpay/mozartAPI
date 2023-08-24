@@ -11,8 +11,8 @@ router.post('/', async (req: Request, res: Response) => {
   res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
   res.header('Content-Type', 'application/json');
 
-    const { email, documentType } = req.body;
-    const document = req.file ? req.file.buffer : null; // Handle the case when no file is uploaded
+    const { email, documentType, document } = req.body;
+   
   
     try {
       if (!document) {
