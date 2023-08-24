@@ -16,7 +16,7 @@ router.post('/', async (req: Request, res: Response) => {
   try {
    
       const response = await currencyConverter.from('USD').to(targetCurrency).amount(1).convert();
-      const convertedAmount = parseFloat((response * amount / 100).toFixed(5));
+      const convertedAmount = parseFloat((response * amount ).toFixed(5));
 
       res.json({ convertedAmount });
     
