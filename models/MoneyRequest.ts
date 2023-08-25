@@ -6,6 +6,8 @@ export interface IMoneyRequest extends Document {
     amount: number;
     receiverName: string;
     receiverEmail: string;
+    date:Date;
+    status:string;
 }
 
 const transactionRequstSchema = new Schema<IMoneyRequest>({
@@ -14,6 +16,8 @@ const transactionRequstSchema = new Schema<IMoneyRequest>({
     amount: Number,
     receiverName: String,
     receiverEmail: String,
+    date: {type: Date, default: Date.now},
+    status: {type: String, default: 'pending'},
 });
 
 const MoneyRequest = mongoose.model<IMoneyRequest>('MoneyRequest', transactionRequstSchema);

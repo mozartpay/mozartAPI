@@ -30,6 +30,8 @@ const transactionRequstSchema = new mongoose_1.Schema({
     amount: Number,
     receiverName: String,
     receiverEmail: String,
+    date: { type: Date, default: Date.now },
+    status: { type: String, default: 'pending' },
 });
 const MoneyRequest = mongoose_1.default.model('MoneyRequest', transactionRequstSchema);
 exports.default = MoneyRequest;

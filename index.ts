@@ -12,6 +12,7 @@ import Money from './routes/convert';
 import Transaction from './routes/transaction';
 import MoneyRequest from './routes/requestMoney';
 import Identity from './routes/identity';
+import Freighter from './routes/freighter';
 require('dotenv').config();
 
 const port = process.env.PORT || '8000'
@@ -37,6 +38,7 @@ app.use('/api/convert', Money);
 app.use('/api/transaction', Transaction);
 app.use('/api/request', MoneyRequest);
 app.use('/api/identity', Identity);
+app.use('/api/freighter', Freighter);
 
 app.get("/hi", (req: Request, res: Response) => {
   res.send("BYEEE!!");

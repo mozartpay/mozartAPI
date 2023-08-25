@@ -6,6 +6,8 @@ export interface ITransaction extends Document {
     amount: number;
     receiverName: string;
     receiverEmail: string;
+    date:Date;
+    status : string;
 }
 
 const transactionSchema = new Schema<ITransaction>({
@@ -14,6 +16,8 @@ const transactionSchema = new Schema<ITransaction>({
     amount: Number,
     receiverName: String,
     receiverEmail: String,
+    date: { type: Date, default: Date.now },
+    status :  { type: String, default: 'pending' },
 });
 
 const Transaction = mongoose.model<ITransaction>('Transaction', transactionSchema);

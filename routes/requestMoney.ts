@@ -64,4 +64,25 @@ router.post('/', async (req: Request, res: Response) => {
     }
 });
 
+
+router.get('/:senderEmail', async (req: Request, res: Response) => {
+  try {
+    const senderEmail = req.params.senderEmail;
+    
+    const transactions: IMoneyRequest[] = await MoneyRequest.find({ senderEmail });
+
+    if (!transactions) {
+
+      return res.status(404).json({ message: 'No transactions found for the provided senderEmail' });
+      
+    }
+
+    res.status(200).json(transactions);
+  } catch (error) {
+    console.error('Error fetching transactions:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+
 export default router;

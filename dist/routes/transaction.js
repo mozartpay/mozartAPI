@@ -67,4 +67,18 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         res.status(500).json({ error: 'An error occurred while storing the data.' });
     }
 }));
+router.get('/:email', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const senderEmail = req.params.email;
+        const transactions = yield Transaction_1.default.find({ senderEmail });
+        if (!transactions) {
+            return res.status(404).json({ message: 'No transactions found for the provided senderEmail' });
+        }
+        res.status(200).json(transactions);
+    }
+    catch (error) {
+        console.error('Error fetching transactions:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+}));
 exports.default = router;

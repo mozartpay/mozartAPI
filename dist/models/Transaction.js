@@ -30,6 +30,8 @@ const transactionSchema = new mongoose_1.Schema({
     amount: Number,
     receiverName: String,
     receiverEmail: String,
+    date: { type: Date, default: Date.now },
+    status: { type: String, default: 'pending' },
 });
 const Transaction = mongoose_1.default.model('Transaction', transactionSchema);
 exports.default = Transaction;

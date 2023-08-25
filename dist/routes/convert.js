@@ -25,16 +25,9 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     res.header('Content-Type', 'application/json');
     const { amount, targetCurrency } = req.body;
     try {
-        if (targetCurrency === 'COP') {
-            const response = yield currencyConverter.from('USD').to(targetCurrency).amount(1).convert();
-            const convertedAmount = parseFloat((response * amount * 1000).toFixed(5));
-            res.json({ convertedAmount });
-        }
-        else {
-            const response = yield currencyConverter.from('USD').to(targetCurrency).amount(1).convert();
-            const convertedAmount = parseFloat((response * amount / 100).toFixed(5));
-            res.json({ convertedAmount });
-        }
+        const response = yield currencyConverter.from('USD').to(targetCurrency).amount(1).convert();
+        const convertedAmount = parseFloat((response * amount).toFixed(5));
+        res.json({ convertedAmount });
     }
     catch (error) {
         console.error('Error converting:', error);

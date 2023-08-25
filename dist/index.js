@@ -17,6 +17,7 @@ const convert_1 = __importDefault(require("./routes/convert"));
 const transaction_1 = __importDefault(require("./routes/transaction"));
 const requestMoney_1 = __importDefault(require("./routes/requestMoney"));
 const identity_1 = __importDefault(require("./routes/identity"));
+const freighter_1 = __importDefault(require("./routes/freighter"));
 require('dotenv').config();
 const port = process.env.PORT || '8000';
 const app = (0, express_1.default)();
@@ -37,6 +38,7 @@ app.use('/api/convert', convert_1.default);
 app.use('/api/transaction', transaction_1.default);
 app.use('/api/request', requestMoney_1.default);
 app.use('/api/identity', identity_1.default);
+app.use('/api/freighter', freighter_1.default);
 app.get("/hi", (req, res) => {
     res.send("BYEEE!!");
 });
