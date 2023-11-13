@@ -11,6 +11,7 @@ interface UserDoc extends mongoose.Document {
   token:string;
   number:string;
   verificationCode:string;
+  createdAt: Date;
 }
 
 const userSchema = new mongoose.Schema<UserDoc>({
@@ -24,6 +25,7 @@ const userSchema = new mongoose.Schema<UserDoc>({
   token: String,
   number: String,
   verificationCode: String,
+  createdAt: { type: Date, default: Date.now }
 });
 
 export const User = mongoose.model<UserDoc>('User', userSchema);

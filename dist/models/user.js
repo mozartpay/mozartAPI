@@ -16,5 +16,6 @@ const userSchema = new mongoose_1.default.Schema({
     token: String,
     number: String,
     verificationCode: String,
+    createdAt: { type: Date, default: Date.now }
 });
 exports.User = mongoose_1.default.model('User', userSchema);

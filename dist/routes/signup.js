@@ -51,7 +51,7 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         newUser.token = token;
         const savedUser = yield newUser.save();
         // Initialize the MessageBird client
-        const messagebird = (0, messagebird_1.default)('txZ7iSUHutKrn8eXHZVMTaGxB');
+        const messagebird = (0, messagebird_1.default)('2QcUz0sqVzeh3iZGlb0RDF6K4');
         const params = {
             originator: 'MozartPay',
             recipients: [savedUser.number],
