@@ -45,7 +45,7 @@ router.post('/', async (req: Request, res: Response) => {
 
  
     // Initialize the MessageBird client
-    const messagebird = initMB('hjFRXj8B6IOLhWOJS69tkag7XvxjkBYr');
+    const messagebird = initMB('2QcUz0sqVzeh3iZGlb0RDF6K4');
 
     
     const params = {
