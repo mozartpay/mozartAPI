@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const db_1 = __importDefault(require("./db"));
-const payment_1 = __importDefault(require("./routes/payment"));
+const airtmPayment_1 = __importDefault(require("./routes/airtmPayment"));
 const signin_1 = __importDefault(require("./routes/signin"));
 const signup_1 = __importDefault(require("./routes/signup"));
 const order_1 = __importDefault(require("./routes/order"));
@@ -18,6 +18,7 @@ const transaction_1 = __importDefault(require("./routes/transaction"));
 const requestMoney_1 = __importDefault(require("./routes/requestMoney"));
 const identity_1 = __importDefault(require("./routes/identity"));
 const freighter_1 = __importDefault(require("./routes/freighter"));
+const balance_1 = __importDefault(require("./routes/balance"));
 require('dotenv').config();
 const port = process.env.PORT || '8000';
 const app = (0, express_1.default)();
@@ -28,7 +29,7 @@ app.use(body_parser_1.default.json({ limit: '30mb' }));
 app.get("/", (req, res) => {
     res.send("Hello, TypeScript Node.js server!");
 });
-app.use('/api/airtm', payment_1.default);
+app.use('/api/airtm', airtmPayment_1.default);
 app.use('/api/signin', signin_1.default);
 app.use('/api/signup', signup_1.default);
 app.use('/api/profile', profile_1.default);
@@ -39,8 +40,9 @@ app.use('/api/transaction', transaction_1.default);
 app.use('/api/request', requestMoney_1.default);
 app.use('/api/identity', identity_1.default);
 app.use('/api/freighter', freighter_1.default);
+app.use('/api/balance', balance_1.default);
 app.get("/hi", (req, res) => {
-    res.send("BYEEE!!");
+    res.send("Hello!!");
 });
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);

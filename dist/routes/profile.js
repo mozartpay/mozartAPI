@@ -41,8 +41,8 @@ router.post('/image', (req, res) => __awaiter(void 0, void 0, void 0, function* 
     res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
     res.header('Content-Type', 'application/json');
     const { email, image } = req.body;
-    console.log('email', email);
-    console.log('image', image);
+    // console.log('email',email)
+    // console.log('image',image)
     try {
         const user = yield user_1.User.findOneAndUpdate({ email }, { image }, { new: true });
         console.log('try');

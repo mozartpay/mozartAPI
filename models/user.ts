@@ -6,6 +6,7 @@ interface UserDoc extends mongoose.Document {
   name: string;
   image: string;
   bio: string;
+  balance: string;
   resetToken:string;
   resetTokenExpiration: Date;
   token:string;
@@ -20,6 +21,7 @@ const userSchema = new mongoose.Schema<UserDoc>({
   name: { type: String, required: false },
   image: { type: String },
   bio: { type: String },
+  balance: { type: String },
   resetToken: { type: String},
   resetTokenExpiration: {type: Date},
   token: String,

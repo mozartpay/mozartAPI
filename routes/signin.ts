@@ -56,6 +56,7 @@ router.post('/', async (req: Request, res: Response) => {
       user: {
         email: user.email,
         name: user.name,
+        balance: user.balance
       },
     });
   } catch (error) {

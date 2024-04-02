@@ -1,6 +1,6 @@
 import express, { Express, Request, Response } from "express";
 import connectToDB from './db';
-import paymentRouter from './routes/payment';
+import airtmRouter from './routes/airtmPayment';
 import signinRouter from './routes/signin';
 import signupRouter from './routes/signup';
 import order from './routes/order';
@@ -13,6 +13,9 @@ import Transaction from './routes/transaction';
 import MoneyRequest from './routes/requestMoney';
 import Identity from './routes/identity';
 import Freighter from './routes/freighter';
+import Balance from "./routes/balance";
+
+
 require('dotenv').config();
 
 const port = process.env.PORT || '8000'
@@ -28,7 +31,7 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 
-app.use('/api/airtm', paymentRouter);
+app.use('/api/airtm', airtmRouter);
 app.use('/api/signin', signinRouter);
 app.use('/api/signup', signupRouter);
 app.use('/api/profile', profile);
@@ -39,9 +42,10 @@ app.use('/api/transaction', Transaction);
 app.use('/api/request', MoneyRequest);
 app.use('/api/identity', Identity);
 app.use('/api/freighter', Freighter);
+app.use('/api/balance', Balance);
 
 app.get("/hi", (req: Request, res: Response) => {
-  res.send("BYEEE!!");
+  res.send("Hello!!");
 });
 
 app.listen(port, () => {

@@ -33,8 +33,8 @@ router.post('/image', async (req: Request, res: Response) => {
     res.header('Content-Type', 'application/json');
 
     const { email, image } = req.body;
-    console.log('email',email)
-    console.log('image',image)
+    // console.log('email',email)
+    // console.log('image',image)
     try {
       const user = await User.findOneAndUpdate({ email }, { image }, { new: true });
       console.log('try')

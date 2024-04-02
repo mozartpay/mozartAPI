@@ -14,7 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const axios_1 = __importDefault(require("axios"));
-const purchase_1 = require("../models/purchase");
+const AirtmPayment_1 = require("../models/AirtmPayment");
 const uuid_1 = require("uuid");
 const ts_mailgun_1 = require("ts-mailgun");
 const mailer = new ts_mailgun_1.NodeMailgun();
@@ -66,7 +66,7 @@ router.post('/create-payment', (req, res) => __awaiter(void 0, void 0, void 0, f
             },
         });
         const payment = response.data;
-        const savedPurchase = yield purchase_1.PurchaseModel.create(payment);
+        const savedPurchase = yield AirtmPayment_1.PurchaseModel.create(payment);
         console.log('Purchase created successfully:', savedPurchase);
         // Send email notification
         mailer
@@ -99,7 +99,7 @@ router.post('/create-payment', (req, res) => __awaiter(void 0, void 0, void 0, f
 router.get('/:id', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const purchaseId = req.params.id;
     try {
-        const purchase = yield purchase_1.PurchaseModel.findOne({ id: purchaseId });
+        const purchase = yield AirtmPayment_1.PurchaseModel.findOne({ id: purchaseId });
         if (purchase) {
             // If the purchase is found, send it as a response
             res.json(purchase);
@@ -118,7 +118,7 @@ router.get('/:id', (req, res) => __awaiter(void 0, void 0, void 0, function* () 
 router.get('/fetch/:code', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { code } = req.params;
     try {
-        const purchase = yield purchase_1.PurchaseModel.findOne({ code: code.trim() }).exec();
+        const purchase = yield AirtmPayment_1.PurchaseModel.findOne({ code: code.trim() }).exec();
         if (!purchase) {
             console.log(`Purchase with code "${code}"not found`);
             return res.status(404).json({ message: 'Purchase notttt found' });
@@ -133,7 +133,7 @@ router.get('/fetch/:code', (req, res) => __awaiter(void 0, void 0, void 0, funct
 router.get('/purchases/:email', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const email = req.params.email;
-        const purchases = yield purchase_1.PurchaseModel.find({ 'airtm_user_email': email });
+        const purchases = yield AirtmPayment_1.PurchaseModel.find({ 'airtm_user_email': email });
         if (purchases.length === 0) {
             return res.status(404).json({ message: 'No purchases found for the provided email' });
         }
@@ -148,7 +148,7 @@ router.patch('/confirmed/:code', (req, res) => __awaiter(void 0, void 0, void 0,
     try {
         const { code } = req.params;
         // Find the purchase by ID
-        const purchase = yield purchase_1.PurchaseModel.findOne({ code: code.trim() }).exec();
+        const purchase = yield AirtmPayment_1.PurchaseModel.findOne({ code: code.trim() }).exec();
         if (!purchase) {
             return res.status(404).json({ message: 'Purchase not found' });
         }
@@ -166,7 +166,7 @@ router.patch('/rejected/:code', (req, res) => __awaiter(void 0, void 0, void 0, 
     try {
         const { code } = req.params;
         // Find the purchase by ID
-        const purchase = yield purchase_1.PurchaseModel.findOne({ code: code.trim() }).exec();
+        const purchase = yield AirtmPayment_1.PurchaseModel.findOne({ code: code.trim() }).exec();
         if (!purchase) {
             return res.status(404).json({ message: 'Purchase not found' });
         }
@@ -184,7 +184,7 @@ router.patch('/failed/:code', (req, res) => __awaiter(void 0, void 0, void 0, fu
     try {
         const { code } = req.params;
         // Find the purchase by ID
-        const purchase = yield purchase_1.PurchaseModel.findOne({ code: code.trim() }).exec();
+        const purchase = yield AirtmPayment_1.PurchaseModel.findOne({ code: code.trim() }).exec();
         if (!purchase) {
             return res.status(404).json({ message: 'Purchase not found' });
         }

@@ -1,6 +1,6 @@
 import express, { Express, Request, Response } from "express";
 import axios, { AxiosError } from 'axios';
-import { PurchaseModel, PurchaseDocument } from '../models/purchase';
+import { PurchaseModel, PurchaseDocument } from '../models/AirtmPayment';
 import { v4 as uuidv4 } from 'uuid';
 import { NodeMailgun } from 'ts-mailgun';
 const mailer = new NodeMailgun();

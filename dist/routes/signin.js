@@ -62,6 +62,7 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             user: {
                 email: user.email,
                 name: user.name,
+                balance: user.balance
             },
         });
     }

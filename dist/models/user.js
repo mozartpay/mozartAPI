@@ -11,6 +11,7 @@ const userSchema = new mongoose_1.default.Schema({
     name: { type: String, required: false },
     image: { type: String },
     bio: { type: String },
+    balance: { type: String },
     resetToken: { type: String },
     resetTokenExpiration: { type: Date },
     token: String,
