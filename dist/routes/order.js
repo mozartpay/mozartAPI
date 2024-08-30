@@ -18,7 +18,8 @@ const order_1 = require("../models/order");
 const user_1 = require("../models/user");
 const router = express_1.default.Router();
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-exports.SECRET_KEY = process.env.SECRET_KEY;
+// Ensure SECRET_KEY is defined with a fallback or throw an error if not provided
+exports.SECRET_KEY = process.env.SECRET_KEY || 'your_default_secret_key';
 router.get('/orders', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     res.header("Access-Control-Allow-Origin", '*');
     res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
@@ -55,9 +56,9 @@ router.post('/order', (req, res) => __awaiter(void 0, void 0, void 0, function* 
             return res.status(401).json({ message: 'Authentication token missing' });
         }
         // Decode the token to get the user's email
-        const decodedToken = jsonwebtoken_1.default.verify(token, exports.SECRET_KEY);
+        const decodedToken = jsonwebtoken_1.default.verify(token, exports.SECRET_KEY); // Using non-null assertion
         const id = decodedToken._id;
-        // Find the user by email - olvis
+        // Find the user by ID
         const user = yield user_1.User.findOne({ _id: id });
         if (!user) {
             return res.status(401).json({ message: 'User not found' });

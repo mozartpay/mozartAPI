@@ -3,7 +3,9 @@ import { Order, OrderModel } from '../models/order';
 import { User } from '../models/user'; 
 const router = express.Router();
 import jwt from 'jsonwebtoken';
-export const SECRET_KEY = process.env.SECRET_KEY;
+
+// Ensure SECRET_KEY is defined with a fallback or throw an error if not provided
+export const SECRET_KEY = process.env.SECRET_KEY || 'your_default_secret_key';
 
 router.get('/orders', async (req: Request, res: Response) => {
   res.header("Access-Control-Allow-Origin", '*');
@@ -45,10 +47,11 @@ router.post('/order', async (req: Request, res: Response) => {
     }
 
     // Decode the token to get the user's email
-    const decodedToken: any = jwt.verify(token, SECRET_KEY);
+    const decodedToken: any = jwt.verify(token, SECRET_KEY!); // Using non-null assertion
+
     const id = decodedToken._id;
 
-    // Find the user by email - olvis
+    // Find the user by ID
     const user = await User.findOne({ _id: id });
 
     if (!user) {
@@ -99,3 +102,4 @@ router.get('/order/:email', async (req, res) => {
 });
 
 export default router;
+

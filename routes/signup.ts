@@ -34,6 +34,10 @@ router.post('/', async (req: Request, res: Response) => {
       password: hashedPassword,
       name: fullname,
       number: number,
+      balance:"0",
+      balanceUsd: "0",
+      balanceEur: "0",
+      balanceCop: "0",
       verificationCode:verificationCode,
     });
   

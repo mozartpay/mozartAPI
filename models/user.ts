@@ -6,7 +6,15 @@ interface UserDoc extends mongoose.Document {
   name: string;
   image: string;
   bio: string;
+  publicKeyXlm: string;
+  privateKeyXlm: string;
   balance: string;
+  balanceUsd: string;
+  balanceEur: string;
+  balanceCop: string;
+  balanceBtc: string;
+  balanceEth: string;
+  balanceXlm: string;
   resetToken:string;
   resetTokenExpiration: Date;
   token:string;
@@ -21,7 +29,14 @@ const userSchema = new mongoose.Schema<UserDoc>({
   name: { type: String, required: false },
   image: { type: String },
   bio: { type: String },
+  publicKeyXlm: { type: String },
+  privateKeyXlm: { type: String },
   balance: { type: String },
+  balanceUsd: { type: String },
+  balanceEur: { type: String },
+  balanceCop: { type: String },
+  balanceBtc: { type: String },
+  balanceXlm: { type: String },
   resetToken: { type: String},
   resetTokenExpiration: {type: Date},
   token: String,

@@ -1,0 +1,116 @@
+"use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = __importDefault(require("express"));
+const stellar_sdk_1 = __importDefault(require("@stellar/stellar-sdk"));
+const dotenv_1 = __importDefault(require("dotenv"));
+const user_1 = require("../models/user");
+dotenv_1.default.config({ path: './config.env' });
+const { Keypair, TransactionBuilder, Networks, BASE_FEE, Operation } = stellar_sdk_1.default;
+const router = express_1.default.Router();
+// Correct environment variable names
+const fundingSecretKey = process.env.STELLAR_SECRET_KEY;
+const fundingPublicKey = process.env.STELLAR_PUBLIC_KEY;
+if (!fundingSecretKey || !fundingPublicKey) {
+    throw new Error('STELLAR_SECRET_KEY and STELLAR_PUBLIC_KEY must be set in config.env');
+}
+const fundingKeypair = Keypair.fromSecret(fundingSecretKey);
+const server = new stellar_sdk_1.default.Horizon.Server('https://horizon-testnet.stellar.org'); // Connect to the Stellar testnet
+// Helper function to wait for the account to be available on the network
+const waitForAccount = (publicKey, retries = 5, delay = 2000) => __awaiter(void 0, void 0, void 0, function* () {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const account = yield server.loadAccount(publicKey);
+            return account; // Return the account if successfully loaded
+        }
+        catch (error) {
+            console.log(`Attempt ${i + 1} failed. Retrying in ${delay / 1000} seconds...`);
+            yield new Promise(res => setTimeout(res, delay));
+        }
+    }
+    throw new Error('Failed to load account after multiple attempts');
+});
+router.post('/create', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        const { email, currency } = req.body;
+        // Ensure that this feature is only available for XLM
+        if (currency !== 'XLM') {
+            return res.status(400).json({ error: 'This feature is only available for XLM' });
+        }
+        // Generate a new Stellar keypair
+        const pair = Keypair.random();
+        // Log the generated public and secret keys for debugging
+        console.log('New Stellar Public Key:', pair.publicKey());
+        console.log('New Stellar Secret Key:', pair.secret());
+        // Load the funding account
+        const sourceAccount = yield server.loadAccount(fundingPublicKey);
+        // Create a transaction to create a new account with 10 XLM
+        const transaction = new TransactionBuilder(sourceAccount, {
+            fee: BASE_FEE,
+            networkPassphrase: Networks.TESTNET,
+        })
+            .addOperation(Operation.createAccount({
+            destination: pair.publicKey(),
+            startingBalance: '10', // Send 10 XLM to the new account to create it
+        }))
+            .setTimeout(30)
+            .build();
+        console.log('Built Transaction XDR:', transaction.toXDR()); // Log the transaction XDR
+        // Sign the transaction with the funding account's secret key
+        transaction.sign(fundingKeypair);
+        // Submit the transaction to the Stellar network
+        const transactionResult = yield server.submitTransaction(transaction);
+        console.log('Transaction successful:', transactionResult);
+        // Wait for the new account to be available on the network
+        const account = yield waitForAccount(pair.publicKey());
+        // Explicitly type the balances array
+        const xlmBalance = ((_a = account.balances.find((b) => b.asset_type === 'native')) === null || _a === void 0 ? void 0 : _a.balance) || '0';
+        // Update the user's record with the new Stellar keypair and balance in MongoDB
+        const user = yield user_1.User.findOneAndUpdate({ email }, {
+            publicKeyXlm: pair.publicKey(),
+            privateKeyXlm: pair.secret(), // Store the plain text private key
+        }, { new: true } // Return the updated document
+        );
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        // Send the public key, private key, and balance to the frontend
+        return res.json({
+            publicKey: pair.publicKey(),
+            privateKey: pair.secret(),
+            balance: xlmBalance, // Send the balance to the frontend
+        });
+    }
+    catch (error) {
+        console.error('Error creating Stellar account:', error);
+        // Type assertion: assume error is an AxiosError
+        if (error instanceof Error && error.response) {
+            const axiosError = error;
+            if (axiosError.response.data) {
+                console.error('Horizon server response:', axiosError.response.data);
+                if (axiosError.response.data.extras && axiosError.response.data.extras.result_codes) {
+                    console.error('Transaction Result Codes:', axiosError.response.data.extras.result_codes);
+                }
+            }
+        }
+        if (error instanceof Error) {
+            return res.status(500).json({ error: 'Failed to create account', details: error.message });
+        }
+        else {
+            return res.status(500).json({ error: 'Failed to create account', details: 'An unknown error occurred' });
+        }
+    }
+}));
+exports.default = router;

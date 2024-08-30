@@ -12,6 +12,7 @@ async function connectToDB() {
     .catch((err) => {
       console.log(`Initial Distribution API Database connection error occurred -`, err);
     });
+    
 }
 
 export default connectToDB;

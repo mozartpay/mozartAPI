@@ -14,7 +14,6 @@ mailer.fromTitle = 'MozartPay';
 mailer.init();
 
 
-
 const router = express.Router();
 const app = express();
 app.use(express.json());
@@ -53,7 +52,6 @@ router.post('/create-payment', async (req: Request, res: Response) => {
     ],
   };
 
-  
   try {
     const response = await axios.post('https://payments.static-stg.tests.airtm.org/purchases', purchaseData, {
       headers: {

@@ -43,6 +43,10 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             password: hashedPassword,
             name: fullname,
             number: number,
+            balance: "0",
+            balanceUsd: "0",
+            balanceEur: "0",
+            balanceCop: "0",
             verificationCode: verificationCode,
         });
         const token = jsonwebtoken_1.default.sign({ _id: (_a = newUser._id) === null || _a === void 0 ? void 0 : _a.toString(), name: newUser.name }, 'pvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.vaYmi2wAFIP-RGn6jvfY_MUYwghZd8rZzeDeZ4xiQmk', {

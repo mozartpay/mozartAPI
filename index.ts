@@ -14,12 +14,13 @@ import MoneyRequest from './routes/requestMoney';
 import Identity from './routes/identity';
 import Freighter from './routes/freighter';
 import Balance from "./routes/balance";
-
+import Xlm from "./routes/xlm";
 
 require('dotenv').config();
 
 const port = process.env.PORT || '8000'
 const app: Express = express();
+
 app.use(cors());
 app.use(express.json());
 
@@ -27,7 +28,7 @@ app.use(bodyParser.json({ limit: '30mb' }));
 
 connectToDB();
 app.get("/", (req: Request, res: Response) => {
-  res.send("Hello, TypeScript Node.js server!");
+  res.send("Hello, Mozart Typescript Node.js server!");
 });
 
 
@@ -43,6 +44,7 @@ app.use('/api/request', MoneyRequest);
 app.use('/api/identity', Identity);
 app.use('/api/freighter', Freighter);
 app.use('/api/balance', Balance);
+app.use('/api/xlm', Xlm);
 
 app.get("/hi", (req: Request, res: Response) => {
   res.send("Hello!!");
@@ -51,3 +53,4 @@ app.get("/hi", (req: Request, res: Response) => {
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
+
