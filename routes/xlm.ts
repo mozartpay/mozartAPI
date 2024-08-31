@@ -19,13 +19,13 @@ if (!fundingSecretKey || !fundingPublicKey) {
 
 const fundingKeypair = Keypair.fromSecret(fundingSecretKey);
 const server = new StellarSdk.Horizon.Server('https://horizon-testnet.stellar.org'); // Connect to the Stellar testnet
-
+// const accRes = new StellarSdk.Horizon.AccountResponse()
 // Helper function to wait for the account to be available on the network
 const waitForAccount = async (
   publicKey: string,
   retries = 5,
   delay = 2000
-): Promise<import('@stellar/stellar-sdk').Horizon.AccountResponse> => {
+) => {  // Use AccountResponse here
   for (let i = 0; i < retries; i++) {
     try {
       const account = await server.loadAccount(publicKey);
@@ -84,7 +84,7 @@ router.post('/create', async (req: Request, res: Response) => {
     const account = await waitForAccount(pair.publicKey());
 
     // Explicitly type the balances array
-    const xlmBalance = account.balances.find((b) => b.asset_type === 'native')?.balance || '0';
+    const xlmBalance = account.balances.find((b: { asset_type: string; balance: string }) => b.asset_type === 'native')?.balance || '0';
 
     // Update the user's record with the new Stellar keypair and balance in MongoDB
     const user = await User.findOneAndUpdate(
@@ -107,26 +107,9 @@ router.post('/create', async (req: Request, res: Response) => {
       balance: xlmBalance, // Send the balance to the frontend
     });
   } catch (error) {
-    console.error('Error creating Stellar account:', error);
-
-    // Type assertion: assume error is an AxiosError
-    if (error instanceof Error && (error as any).response) {
-      const axiosError = error as any;
-      if (axiosError.response.data) {
-        console.error('Horizon server response:', axiosError.response.data);
-        if (axiosError.response.data.extras && axiosError.response.data.extras.result_codes) {
-          console.error('Transaction Result Codes:', axiosError.response.data.extras.result_codes);
-        }
-      }
-    }
-
-    if (error instanceof Error) {
-      return res.status(500).json({ error: 'Failed to create account', details: error.message });
-    } else {
-      return res.status(500).json({ error: 'Failed to create account', details: 'An unknown error occurred' });
-    }
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
 export default router;
-

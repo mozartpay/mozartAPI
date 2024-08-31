@@ -27,6 +27,7 @@ if (!fundingSecretKey || !fundingPublicKey) {
 }
 const fundingKeypair = Keypair.fromSecret(fundingSecretKey);
 const server = new stellar_sdk_1.default.Horizon.Server('https://horizon-testnet.stellar.org'); // Connect to the Stellar testnet
+// const accRes = new StellarSdk.Horizon.AccountResponse()
 // Helper function to wait for the account to be available on the network
 const waitForAccount = (publicKey, retries = 5, delay = 2000) => __awaiter(void 0, void 0, void 0, function* () {
     for (let i = 0; i < retries; i++) {
@@ -94,23 +95,8 @@ router.post('/create', (req, res) => __awaiter(void 0, void 0, void 0, function*
         });
     }
     catch (error) {
-        console.error('Error creating Stellar account:', error);
-        // Type assertion: assume error is an AxiosError
-        if (error instanceof Error && error.response) {
-            const axiosError = error;
-            if (axiosError.response.data) {
-                console.error('Horizon server response:', axiosError.response.data);
-                if (axiosError.response.data.extras && axiosError.response.data.extras.result_codes) {
-                    console.error('Transaction Result Codes:', axiosError.response.data.extras.result_codes);
-                }
-            }
-        }
-        if (error instanceof Error) {
-            return res.status(500).json({ error: 'Failed to create account', details: error.message });
-        }
-        else {
-            return res.status(500).json({ error: 'Failed to create account', details: 'An unknown error occurred' });
-        }
+        console.error(error);
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 }));
 exports.default = router;

@@ -1,6 +1,6 @@
 import express, { Express, Request, Response } from "express";
 import connectToDB from './db';
-import airtmRouter from './routes/airtmPayment';
+// import airtmRouter from './routes/airtmPayment';
 import signinRouter from './routes/signin';
 import signupRouter from './routes/signup';
 import order from './routes/order';
@@ -32,7 +32,7 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 
-app.use('/api/airtm', airtmRouter);
+// app.use('/api/airtm', airtmRouter);
 app.use('/api/signin', signinRouter);
 app.use('/api/signup', signupRouter);
 app.use('/api/profile', profile);
