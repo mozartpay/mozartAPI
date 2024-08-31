@@ -15,12 +15,14 @@ mailer.fromTitle = 'MozartPay';
 mailer.init();
 
 
+// Initialize Express app
+const app: Express = express();
 
 router.post('/', async (req: Request, res: Response) => {
-  res.header("Access-Control-Allow-Origin", '*');
-  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-  res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
-  res.header('Content-Type', 'application/json');
+  // res.header("Access-Control-Allow-Origin", '*');
+  // res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+  // res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
+  // res.header('Content-Type', 'application/json');
   try {
     const email = req.body.email;
     const password = req.body.password;

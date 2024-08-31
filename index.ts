@@ -21,7 +21,11 @@ require('dotenv').config();
 const port = process.env.PORT || '8000'
 const app: Express = express();
 
-app.use(cors());
+app.use(cors({
+  origin: 'https://www.mozartpay.com', // Replace with your frontend URL
+  methods: 'GET,POST,PUT,DELETE,OPTIONS',
+  allowedHeaders: 'Origin,X-Requested-With,Content-Type,Accept,Authorization'
+}));
 app.use(express.json());
 
 app.use(bodyParser.json({ limit: '30mb' }));

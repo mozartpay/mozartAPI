@@ -23,7 +23,11 @@ const xlm_1 = __importDefault(require("./routes/xlm"));
 require('dotenv').config();
 const port = process.env.PORT || '8000';
 const app = (0, express_1.default)();
-app.use((0, cors_1.default)());
+app.use((0, cors_1.default)({
+    origin: 'https://www.mozartpay.com',
+    methods: 'GET,POST,PUT,DELETE,OPTIONS',
+    allowedHeaders: 'Origin,X-Requested-With,Content-Type,Accept,Authorization'
+}));
 app.use(express_1.default.json());
 app.use(body_parser_1.default.json({ limit: '30mb' }));
 (0, db_1.default)();
