@@ -30,10 +30,10 @@ mailer.init();
 // Initialize Express app
 const app = (0, express_1.default)();
 router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    // res.header("Access-Control-Allow-Origin", '*');
-    // res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-    // res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
-    // res.header('Content-Type', 'application/json');
+    res.header("Access-Control-Allow-Origin", '*');
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+    res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
+    res.header('Content-Type', 'application/json');
     try {
         const email = req.body.email;
         const password = req.body.password;

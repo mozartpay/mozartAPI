@@ -21,10 +21,10 @@ const router = express_1.default.Router();
 require('dotenv').config();
 router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    res.header("Access-Control-Allow-Origin", '*');
-    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-    res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
-    res.header('Content-Type', 'application/json');
+    // res.header("Access-Control-Allow-Origin", '*');
+    // res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+    // res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
+    // res.header('Content-Type', 'application/json');
     try {
         const { email, password, fullname, number } = req.body;
         // Check if the email is already registered

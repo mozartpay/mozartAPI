@@ -12,7 +12,7 @@ import Money from './routes/convert';
 import Transaction from './routes/transaction';
 import MoneyRequest from './routes/requestMoney';
 import Identity from './routes/identity';
-import Freighter from './routes/freighter';
+// import Freighter from './routes/freighter';
 import Balance from "./routes/balance";
 import Xlm from "./routes/xlm";
 
@@ -46,7 +46,7 @@ app.use('/api/convert', Money);
 app.use('/api/transaction', Transaction);
 app.use('/api/request', MoneyRequest);
 app.use('/api/identity', Identity);
-app.use('/api/freighter', Freighter);
+// app.use('/api/freighter', Freighter);
 app.use('/api/balance', Balance);
 app.use('/api/xlm', Xlm);
 

@@ -17,7 +17,7 @@ const convert_1 = __importDefault(require("./routes/convert"));
 const transaction_1 = __importDefault(require("./routes/transaction"));
 const requestMoney_1 = __importDefault(require("./routes/requestMoney"));
 const identity_1 = __importDefault(require("./routes/identity"));
-const freighter_1 = __importDefault(require("./routes/freighter"));
+// import Freighter from './routes/freighter';
 const balance_1 = __importDefault(require("./routes/balance"));
 const xlm_1 = __importDefault(require("./routes/xlm"));
 require('dotenv').config();
@@ -44,7 +44,7 @@ app.use('/api/convert', convert_1.default);
 app.use('/api/transaction', transaction_1.default);
 app.use('/api/request', requestMoney_1.default);
 app.use('/api/identity', identity_1.default);
-app.use('/api/freighter', freighter_1.default);
+// app.use('/api/freighter', Freighter);
 app.use('/api/balance', balance_1.default);
 app.use('/api/xlm', xlm_1.default);
 app.get("/hi", (req, res) => {
