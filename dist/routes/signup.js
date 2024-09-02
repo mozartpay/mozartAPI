@@ -21,10 +21,6 @@ const router = express_1.default.Router();
 require('dotenv').config();
 router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    // res.header("Access-Control-Allow-Origin", '*');
-    // res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-    // res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
-    // res.header('Content-Type', 'application/json');
     try {
         const { email, password, fullname, number } = req.body;
         // Check if the email is already registered
@@ -49,13 +45,22 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             balanceCop: "0",
             verificationCode: verificationCode,
         });
-        const token = jsonwebtoken_1.default.sign({ _id: (_a = newUser._id) === null || _a === void 0 ? void 0 : _a.toString(), name: newUser.name }, 'pvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.vaYmi2wAFIP-RGn6jvfY_MUYwghZd8rZzeDeZ4xiQmk', {
+        // Get JWT secret from environment variables
+        const jwtSecret = process.env.JWT_SECRET;
+        if (!jwtSecret) {
+            throw new Error('JWT secret is not defined in environment variables.');
+        }
+        const token = jsonwebtoken_1.default.sign({ _id: (_a = newUser._id) === null || _a === void 0 ? void 0 : _a.toString(), name: newUser.name }, jwtSecret, {
             expiresIn: '99 days',
         });
         newUser.token = token;
         const savedUser = yield newUser.save();
-        // Initialize the MessageBird client
-        const messagebird = (0, messagebird_1.default)('2QcUz0sqVzeh3iZGlb0RDF6K4');
+        // Initialize the MessageBird client with API key from environment variables
+        const messagebirdApiKey = process.env.MESSAGEBIRD_API_KEY;
+        if (!messagebirdApiKey) {
+            throw new Error('MessageBird API key is not defined in environment variables.');
+        }
+        const messagebird = (0, messagebird_1.default)(messagebirdApiKey);
         const params = {
             originator: 'MozartPay',
             recipients: [savedUser.number],
