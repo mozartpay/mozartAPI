@@ -16,18 +16,37 @@ const express_1 = __importDefault(require("express"));
 const stellar_sdk_1 = __importDefault(require("@stellar/stellar-sdk"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const user_1 = require("../models/user");
+const crypto_1 = __importDefault(require("crypto"));
 dotenv_1.default.config({ path: './config.env' });
 const { Keypair, TransactionBuilder, Networks, BASE_FEE, Operation } = stellar_sdk_1.default;
 const router = express_1.default.Router();
 // Correct environment variable names
 const fundingSecretKey = process.env.STELLAR_SECRET_KEY;
 const fundingPublicKey = process.env.STELLAR_PUBLIC_KEY;
-if (!fundingSecretKey || !fundingPublicKey) {
-    throw new Error('STELLAR_SECRET_KEY and STELLAR_PUBLIC_KEY must be set in config.env');
+const encryptionKey = process.env.ENCRYPTION_SECRET_KEY; // Add an encryption secret in your .env file
+if (!fundingSecretKey || !fundingPublicKey || !encryptionKey) {
+    throw new Error('STELLAR_SECRET_KEY, STELLAR_PUBLIC_KEY, and ENCRYPTION_SECRET_KEY must be set in config.env');
 }
 const fundingKeypair = Keypair.fromSecret(fundingSecretKey);
-const server = new stellar_sdk_1.default.Horizon.Server('https://horizon-testnet.stellar.org'); // Connect to the Stellar testnet
-// const accRes = new StellarSdk.Horizon.AccountResponse()
+const server = new stellar_sdk_1.default.Horizon.Server('https://horizon-testnet.stellar.org');
+// Encryption function using AES-256
+const encryptPrivateKey = (privateKey) => {
+    const iv = crypto_1.default.randomBytes(16); // Initialization vector
+    const cipher = crypto_1.default.createCipheriv('aes-256-cbc', Buffer.from(encryptionKey), iv);
+    let encrypted = cipher.update(privateKey);
+    encrypted = Buffer.concat([encrypted, cipher.final()]);
+    return iv.toString('hex') + ':' + encrypted.toString('hex'); // Return IV + encrypted private key
+};
+// Decryption function
+const decryptPrivateKey = (encryptedPrivateKey) => {
+    const textParts = encryptedPrivateKey.split(':');
+    const iv = Buffer.from(textParts.shift(), 'hex');
+    const encryptedText = Buffer.from(textParts.join(':'), 'hex');
+    const decipher = crypto_1.default.createDecipheriv('aes-256-cbc', Buffer.from(encryptionKey), iv);
+    let decrypted = decipher.update(encryptedText);
+    decrypted = Buffer.concat([decrypted, decipher.final()]);
+    return decrypted.toString();
+};
 // Helper function to wait for the account to be available on the network
 const waitForAccount = (publicKey, retries = 5, delay = 2000) => __awaiter(void 0, void 0, void 0, function* () {
     for (let i = 0; i < retries; i++) {
@@ -52,9 +71,6 @@ router.post('/create', (req, res) => __awaiter(void 0, void 0, void 0, function*
         }
         // Generate a new Stellar keypair
         const pair = Keypair.random();
-        // Log the generated public and secret keys for debugging
-        console.log('New Stellar Public Key:', pair.publicKey());
-        console.log('New Stellar Secret Key:', pair.secret());
         // Load the funding account
         const sourceAccount = yield server.loadAccount(fundingPublicKey);
         // Create a transaction to create a new account with 10 XLM
@@ -68,7 +84,6 @@ router.post('/create', (req, res) => __awaiter(void 0, void 0, void 0, function*
         }))
             .setTimeout(30)
             .build();
-        console.log('Built Transaction XDR:', transaction.toXDR()); // Log the transaction XDR
         // Sign the transaction with the funding account's secret key
         transaction.sign(fundingKeypair);
         // Submit the transaction to the Stellar network
@@ -76,22 +91,21 @@ router.post('/create', (req, res) => __awaiter(void 0, void 0, void 0, function*
         console.log('Transaction successful:', transactionResult);
         // Wait for the new account to be available on the network
         const account = yield waitForAccount(pair.publicKey());
-        // Explicitly type the balances array
-        const xlmBalance = ((_a = account.balances.find((b) => b.asset_type === 'native')) === null || _a === void 0 ? void 0 : _a.balance) || '0';
+        // Encrypt the private key
+        const encryptedPrivateKey = encryptPrivateKey(pair.secret());
         // Update the user's record with the new Stellar keypair and balance in MongoDB
         const user = yield user_1.User.findOneAndUpdate({ email }, {
             publicKeyXlm: pair.publicKey(),
-            privateKeyXlm: pair.secret(), // Store the plain text private key
+            privateKeyXlm: encryptedPrivateKey, // Store the encrypted private key
         }, { new: true } // Return the updated document
         );
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
-        // Send the public key, private key, and balance to the frontend
+        // Send the public key and balance to the frontend, not the private key
         return res.json({
             publicKey: pair.publicKey(),
-            privateKey: pair.secret(),
-            balance: xlmBalance, // Send the balance to the frontend
+            balance: ((_a = account.balances.find((b) => b.asset_type === 'native')) === null || _a === void 0 ? void 0 : _a.balance) || '0',
         });
     }
     catch (error) {

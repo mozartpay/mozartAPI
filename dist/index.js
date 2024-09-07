@@ -24,7 +24,7 @@ require('dotenv').config();
 const port = process.env.PORT || '8000';
 const app = (0, express_1.default)();
 // Add both allowed origins
-const allowedOrigins = ['https://www.mozartpay.com', 'http://192.168.83.198:3000'];
+const allowedOrigins = ['https://www.mozartpay.com', 'http://localhost:3000'];
 app.use((0, cors_1.default)({
     origin: function (origin, callback) {
         // Allow requests with no origin, like mobile apps or curl requests
