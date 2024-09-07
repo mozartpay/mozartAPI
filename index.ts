@@ -22,7 +22,7 @@ const port = process.env.PORT || '8000'
 const app: Express = express();
 
 // Add both allowed origins
-const allowedOrigins = ['https://www.mozartpay.com', 'http://192.168.83.198:3000'];
+const allowedOrigins = ['https://www.mozartpay.com', 'http://localhost:3000'];
 
 app.use(cors({
   origin: function (origin, callback) {
