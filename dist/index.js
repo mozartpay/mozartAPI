@@ -23,8 +23,18 @@ const xlm_1 = __importDefault(require("./routes/xlm"));
 require('dotenv').config();
 const port = process.env.PORT || '8000';
 const app = (0, express_1.default)();
+// Add both allowed origins
+const allowedOrigins = ['https://www.mozartpay.com', 'http://192.168.83.198:3000'];
 app.use((0, cors_1.default)({
-    origin: 'https://www.mozartpay.com',
+    origin: function (origin, callback) {
+        // Allow requests with no origin, like mobile apps or curl requests
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        }
+        else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     methods: 'GET,POST,PUT,DELETE,OPTIONS',
     allowedHeaders: 'Origin,X-Requested-With,Content-Type,Accept,Authorization'
 }));

@@ -21,20 +21,31 @@ require('dotenv').config();
 const port = process.env.PORT || '8000'
 const app: Express = express();
 
+// Add both allowed origins
+const allowedOrigins = ['https://www.mozartpay.com', 'http://192.168.83.198:3000'];
+
 app.use(cors({
-  origin: 'https://www.mozartpay.com', // Replace with your frontend URL
+  origin: function (origin, callback) {
+    // Allow requests with no origin, like mobile apps or curl requests
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: 'GET,POST,PUT,DELETE,OPTIONS',
   allowedHeaders: 'Origin,X-Requested-With,Content-Type,Accept,Authorization'
 }));
+
 app.use(express.json());
 
 app.use(bodyParser.json({ limit: '30mb' }));
 
 connectToDB();
+
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello, Mozart Typescript Node.js server!");
 });
-
 
 // app.use('/api/airtm', airtmRouter);
 app.use('/api/signin', signinRouter);
@@ -57,4 +68,3 @@ app.get("/hi", (req: Request, res: Response) => {
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
-
