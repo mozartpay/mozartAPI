@@ -21,7 +21,7 @@ if (!fundingSecretKey || !fundingPublicKey || !encryptionKey) {
 
 const fundingKeypair = Keypair.fromSecret(fundingSecretKey);
 const server = new StellarSdk.Horizon.Server('https://horizon-testnet.stellar.org');
-
+console.log(encryptionKey.length);
 // Encryption function using AES-256
 const encryptPrivateKey = (privateKey: string) => {
     const iv = crypto.randomBytes(16); // Initialization vector
@@ -29,6 +29,7 @@ const encryptPrivateKey = (privateKey: string) => {
     let encrypted = cipher.update(privateKey);
     encrypted = Buffer.concat([encrypted, cipher.final()]);
     return iv.toString('hex') + ':' + encrypted.toString('hex'); // Return IV + encrypted private key
+  
 };
 
 // Decryption function
