@@ -37,11 +37,19 @@ app.use((0, cors_1.default)({
     },
     methods: 'GET,POST,PUT,DELETE,OPTIONS',
     allowedHeaders: 'Origin,X-Requested-With,Content-Type,Accept,Authorization',
-    preflightContinue: false,
+    credentials: true,
+    optionsSuccessStatus: 200, // To prevent OPTIONS request failing for older browsers
 }));
 app.use(express_1.default.json());
 app.use(body_parser_1.default.json({ limit: '30mb' }));
 (0, db_1.default)();
+app.options('*', (req, res) => {
+    // Handle preflight requests
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,Authorization');
+    res.sendStatus(200); // Respond OK to preflight
+});
 app.get("/", (req, res) => {
     res.send("Hello, Mozart Typescript Node.js server!");
 });
