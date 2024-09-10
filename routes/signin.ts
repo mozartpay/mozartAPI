@@ -18,6 +18,13 @@ mailer.init();
 // Initialize Express app
 const app: Express = express();
 
+router.options('/', (req: Request, res: Response) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,Authorization');
+  res.sendStatus(200); // Respond OK to preflight request
+});
+
 router.post('/', async (req: Request, res: Response) => {
   res.header("Access-Control-Allow-Origin", '*');
   res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');

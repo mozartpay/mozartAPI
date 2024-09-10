@@ -34,7 +34,8 @@ app.use(cors({
     }
   },
   methods: 'GET,POST,PUT,DELETE,OPTIONS',
-  allowedHeaders: 'Origin,X-Requested-With,Content-Type,Accept,Authorization'
+  allowedHeaders: 'Origin,X-Requested-With,Content-Type,Accept,Authorization',
+  preflightContinue: false,
 }));
 
 app.use(express.json());

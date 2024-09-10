@@ -36,7 +36,8 @@ app.use((0, cors_1.default)({
         }
     },
     methods: 'GET,POST,PUT,DELETE,OPTIONS',
-    allowedHeaders: 'Origin,X-Requested-With,Content-Type,Accept,Authorization'
+    allowedHeaders: 'Origin,X-Requested-With,Content-Type,Accept,Authorization',
+    preflightContinue: false,
 }));
 app.use(express_1.default.json());
 app.use(body_parser_1.default.json({ limit: '30mb' }));

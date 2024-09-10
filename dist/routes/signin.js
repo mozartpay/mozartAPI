@@ -29,6 +29,12 @@ mailer.fromTitle = 'MozartPay';
 mailer.init();
 // Initialize Express app
 const app = (0, express_1.default)();
+router.options('/', (req, res) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,Authorization');
+    res.sendStatus(200); // Respond OK to preflight request
+});
 router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     res.header("Access-Control-Allow-Origin", '*');
     res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
