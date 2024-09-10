@@ -39,18 +39,26 @@ app.use(cors({
   optionsSuccessStatus: 200,  // To prevent OPTIONS request failing for older browsers
 }));
 
+// Explicitly handle OPTIONS requests for preflight
+app.options('*', cors({
+  origin: allowedOrigins,
+  methods: 'GET,POST,PUT,DELETE,OPTIONS',
+  allowedHeaders: 'Origin,X-Requested-With,Content-Type,Accept,Authorization',
+  credentials: true,
+}));
+
 app.use(express.json());
 app.use(bodyParser.json({ limit: '30mb' }));
 
 connectToDB();
 
-app.options('*', (req: Request, res: Response) => {
-  // Handle preflight requests
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,Authorization');
-  res.sendStatus(200);  // Respond OK to preflight
-});
+// app.options('*', (req: Request, res: Response) => {
+//   // Handle preflight requests
+//   res.header('Access-Control-Allow-Origin', '*');
+//   res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+//   res.header('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,Authorization');
+//   res.sendStatus(200);  // Respond OK to preflight
+// });
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello, Mozart Typescript Node.js server!");
