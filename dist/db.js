@@ -16,9 +16,12 @@ const mongoose_1 = __importDefault(require("mongoose"));
 function connectToDB() {
     return __awaiter(this, void 0, void 0, function* () {
         yield mongoose_1.default
-            .connect('mongodb+srv://MozartPayUser:MozartPayUser@cluster0.zlfsm.mongodb.net/test?authSource=admin&replicaSet=atlas-11penf-shard-0&readPreference=primary&ssl=true', {
+            // .connect('mongodb+srv://MozartPayUser:MozartPayUser@cluster0.zlfsm.mongodb.net/test?authSource=admin&replicaSet=atlas-11penf-shard-0&readPreference=primary&ssl=true', {
+            .connect('mongodb+srv://MozartPayUser:MozartPayUser@cluster0.zlfsm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', {
             useNewUrlParser: true,
-            useUnifiedTopology: true
+            useUnifiedTopology: true,
+            heartbeatFrequencyMS: 3000,
+            serverSelectionTimeoutMS: 30000,
         })
             .then((res) => {
             console.log('Connected to Distribution API Database - Initial Connection');

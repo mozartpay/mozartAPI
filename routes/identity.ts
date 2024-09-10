@@ -13,7 +13,7 @@ router.post('/', async (req: Request, res: Response) => {
 
   const { email, documentType, document } = req.body;
 
-  console.log('hi')
+
   try {
     // Save identity information to MongoDB
     const identity = new IdentityModel({ email, documentType, document });

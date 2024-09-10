@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const db_1 = __importDefault(require("./db"));
-// import airtmRouter from './routes/airtmPayment';
+const withdraw_1 = __importDefault(require("./routes/withdraw"));
 const signin_1 = __importDefault(require("./routes/signin"));
 const signup_1 = __importDefault(require("./routes/signup"));
 const order_1 = __importDefault(require("./routes/order"));
@@ -17,7 +17,7 @@ const convert_1 = __importDefault(require("./routes/convert"));
 const transaction_1 = __importDefault(require("./routes/transaction"));
 const requestMoney_1 = __importDefault(require("./routes/requestMoney"));
 const identity_1 = __importDefault(require("./routes/identity"));
-// import Freighter from './routes/freighter';
+const trustline_1 = __importDefault(require("./routes/trustline"));
 const balance_1 = __importDefault(require("./routes/balance"));
 const xlm_1 = __importDefault(require("./routes/xlm"));
 require('dotenv').config();
@@ -44,7 +44,7 @@ app.use(body_parser_1.default.json({ limit: '30mb' }));
 app.get("/", (req, res) => {
     res.send("Hello, Mozart Typescript Node.js server!");
 });
-// app.use('/api/airtm', airtmRouter);
+app.use('/api/withdraw', withdraw_1.default);
 app.use('/api/signin', signin_1.default);
 app.use('/api/signup', signup_1.default);
 app.use('/api/profile', profile_1.default);
@@ -54,7 +54,7 @@ app.use('/api/convert', convert_1.default);
 app.use('/api/transaction', transaction_1.default);
 app.use('/api/request', requestMoney_1.default);
 app.use('/api/identity', identity_1.default);
-// app.use('/api/freighter', Freighter);
+app.use('/api/trustline', trustline_1.default);
 app.use('/api/balance', balance_1.default);
 app.use('/api/xlm', xlm_1.default);
 app.get("/hi", (req, res) => {

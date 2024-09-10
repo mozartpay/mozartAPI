@@ -27,26 +27,32 @@ const encryptionKey = process.env.ENCRYPTION_SECRET_KEY; // Add an encryption se
 if (!fundingSecretKey || !fundingPublicKey || !encryptionKey) {
     throw new Error('STELLAR_SECRET_KEY, STELLAR_PUBLIC_KEY, and ENCRYPTION_SECRET_KEY must be set in config.env');
 }
+// Check if encryption key is of the correct length
+if (encryptionKey.length !== 64) { // Expecting a hex-encoded 32-byte key
+    throw new Error('ENCRYPTION_SECRET_KEY must be a 64-character hex string representing a 32-byte key');
+}
 const fundingKeypair = Keypair.fromSecret(fundingSecretKey);
 const server = new stellar_sdk_1.default.Horizon.Server('https://horizon-testnet.stellar.org');
-console.log(encryptionKey.length);
-// Encryption function using AES-256
+// Encryption function using AES-256 with a hex-encoded key
 const encryptPrivateKey = (privateKey) => {
-    const iv = crypto_1.default.randomBytes(16); // Initialization vector
-    const cipher = crypto_1.default.createCipheriv('aes-256-cbc', Buffer.from(encryptionKey), iv);
-    let encrypted = cipher.update(privateKey);
+    const iv = crypto_1.default.randomBytes(16); // Initialization vector (IV) should be 16 bytes
+    // Create cipher with AES-256 and hex-decoded 32-byte key
+    const cipher = crypto_1.default.createCipheriv('aes-256-cbc', Buffer.from(encryptionKey, 'hex'), iv);
+    let encrypted = cipher.update(privateKey, 'utf8'); // Encode privateKey in 'utf8'
     encrypted = Buffer.concat([encrypted, cipher.final()]);
-    return iv.toString('hex') + ':' + encrypted.toString('hex'); // Return IV + encrypted private key
+    // Return IV and encrypted data in hex format
+    return iv.toString('hex') + ':' + encrypted.toString('hex');
 };
 // Decryption function
 const decryptPrivateKey = (encryptedPrivateKey) => {
     const textParts = encryptedPrivateKey.split(':');
     const iv = Buffer.from(textParts.shift(), 'hex');
     const encryptedText = Buffer.from(textParts.join(':'), 'hex');
-    const decipher = crypto_1.default.createDecipheriv('aes-256-cbc', Buffer.from(encryptionKey), iv);
-    let decrypted = decipher.update(encryptedText);
-    decrypted = Buffer.concat([decrypted, decipher.final()]);
-    return decrypted.toString();
+    const decipher = crypto_1.default.createDecipheriv('aes-256-cbc', Buffer.from(encryptionKey, 'hex'), iv);
+    // Update without specifying encodings since you're using Buffers
+    let decrypted = Buffer.concat([decipher.update(encryptedText), decipher.final()]);
+    // Convert the final decrypted buffer to a UTF-8 string
+    return decrypted.toString('utf8');
 };
 // Helper function to wait for the account to be available on the network
 const waitForAccount = (publicKey, retries = 5, delay = 2000) => __awaiter(void 0, void 0, void 0, function* () {
@@ -62,6 +68,29 @@ const waitForAccount = (publicKey, retries = 5, delay = 2000) => __awaiter(void 
     }
     throw new Error('Failed to load account after multiple attempts');
 });
+router.post('/decrypt', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { email } = req.body;
+        // Fetch the user data from the database
+        const user = yield user_1.User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        if (!user.privateKeyXlm) {
+            return res.status(400).json({ error: 'Private key not available' });
+        }
+        // Decrypt the private key
+        const decryptedPrivateKey = decryptPrivateKey(user.privateKeyXlm);
+        // Return the decrypted private key
+        return res.json({
+            privateKey: decryptedPrivateKey,
+        });
+    }
+    catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Failed to decrypt private key' });
+    }
+}));
 router.post('/create', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {

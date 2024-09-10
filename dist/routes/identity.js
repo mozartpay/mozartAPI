@@ -22,7 +22,6 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
     res.header('Content-Type', 'application/json');
     const { email, documentType, document } = req.body;
-    console.log('hi');
     try {
         // Save identity information to MongoDB
         const identity = new identity_1.default({ email, documentType, document });
