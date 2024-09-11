@@ -1,12 +1,12 @@
 import express, { Express, Request, Response } from "express";
 import connectToDB from './db';
+import cors from 'cors';
+import bodyParser from 'body-parser';
 import withdraw from './routes/withdraw';
 import signinRouter from './routes/signin';
 import signupRouter from './routes/signup';
 import order from './routes/order';
 import profile from './routes/profile';
-import cors from 'cors';
-import bodyParser from 'body-parser';
 import subscriptionRoutes from './routes/subscription';
 import Money from './routes/convert';
 import Transaction from './routes/transaction';
@@ -18,52 +18,41 @@ import Xlm from "./routes/xlm";
 
 require('dotenv').config();
 
-const port = process.env.PORT || '8000'
+const port = process.env.PORT || '8000';
 const app: Express = express();
 
-// Add both allowed origins
+// Define allowed origins for development and production
 const allowedOrigins = ['https://www.mozartpay.com', 'http://localhost:3000'];
 
+// CORS Middleware
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin, like mobile apps or curl requests
-    if (!origin || allowedOrigins.includes(origin)) {
+    // Allow requests with no origin (like mobile apps or curl requests) and allowed origins
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
   },
+  credentials: true,  // Allow credentials (cookies, authorization headers)
   methods: 'GET,POST,PUT,DELETE,OPTIONS',
   allowedHeaders: 'Origin,X-Requested-With,Content-Type,Accept,Authorization',
-  credentials: true,  // Allow credentials such as cookies or auth tokens
-  optionsSuccessStatus: 200,  // To prevent OPTIONS request failing for older browsers
+  optionsSuccessStatus: 200  // For legacy browser support
 }));
 
-// Explicitly handle OPTIONS requests for preflight
-app.options('*', cors({
-  origin: allowedOrigins,
-  methods: 'GET,POST,PUT,DELETE,OPTIONS',
-  allowedHeaders: 'Origin,X-Requested-With,Content-Type,Accept,Authorization',
-  credentials: true,
-}));
-
+// Middleware for parsing JSON requests
 app.use(express.json());
 app.use(bodyParser.json({ limit: '30mb' }));
 
+// Connect to database
 connectToDB();
 
-// app.options('*', (req: Request, res: Response) => {
-//   // Handle preflight requests
-//   res.header('Access-Control-Allow-Origin', '*');
-//   res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-//   res.header('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,Authorization');
-//   res.sendStatus(200);  // Respond OK to preflight
-// });
-
+// Default Route
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello, Mozart Typescript Node.js server!");
 });
 
+// Define API routes
 app.use('/api/withdraw', withdraw);
 app.use('/api/signin', signinRouter);
 app.use('/api/signup', signupRouter);
@@ -78,10 +67,7 @@ app.use('/api/trustline', Trustline);
 app.use('/api/balance', Balance);
 app.use('/api/xlm', Xlm);
 
-app.get("/hi", (req: Request, res: Response) => {
-  res.send("Hello!!");
-});
-
+// Start the server
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
