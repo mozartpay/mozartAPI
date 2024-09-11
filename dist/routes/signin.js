@@ -47,6 +47,7 @@ mailer.fromEmail = 'admin@mozartpay.com';
 mailer.fromTitle = 'MozartPay';
 mailer.init();
 router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log("request");
     try {
         const { email, password } = req.body;
         const user = yield user_1.User.findOne({ email });

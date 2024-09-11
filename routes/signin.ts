@@ -36,6 +36,7 @@ mailer.fromTitle = 'MozartPay';
 mailer.init();
 
 router.post('/', async (req: Request, res: Response) => {
+  console.log("request")
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });

@@ -24,7 +24,7 @@ require('dotenv').config();
 const port = process.env.PORT || '8000';
 const app = (0, express_1.default)();
 // Define allowed origins for development and production
-const allowedOrigins = ['https://www.mozartpay.com', 'http://localhost:3000'];
+const allowedOrigins = ['https://www.mozartpay.com', 'http://localhost:3000', 'https://mozart-api-21ea5fd801a8.herokuapp.com'];
 // CORS Middleware
 app.use((0, cors_1.default)({
     origin: function (origin, callback) {

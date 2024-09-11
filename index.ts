@@ -22,7 +22,7 @@ const port = process.env.PORT || '8000';
 const app: Express = express();
 
 // Define allowed origins for development and production
-const allowedOrigins = ['https://www.mozartpay.com', 'http://localhost:3000'];
+const allowedOrigins = ['https://www.mozartpay.com', 'http://localhost:3000','https://mozart-api-21ea5fd801a8.herokuapp.com'];
 
 // CORS Middleware
 app.use(cors({

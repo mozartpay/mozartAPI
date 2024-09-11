@@ -36,9 +36,8 @@ const server = new stellar_sdk_1.default.Horizon.Server('https://horizon-testnet
 // Encryption function using AES-256 with a hex-encoded key
 const encryptPrivateKey = (privateKey) => {
     const iv = crypto_1.default.randomBytes(16); // Initialization vector (IV) should be 16 bytes
-    // Create cipher with AES-256 and hex-decoded 32-byte key
     const cipher = crypto_1.default.createCipheriv('aes-256-cbc', Buffer.from(encryptionKey, 'hex'), iv);
-    let encrypted = cipher.update(privateKey, 'utf8'); // Encode privateKey in 'utf8'
+    let encrypted = cipher.update(privateKey, 'utf8');
     encrypted = Buffer.concat([encrypted, cipher.final()]);
     // Return IV and encrypted data in hex format
     return iv.toString('hex') + ':' + encrypted.toString('hex');
@@ -49,13 +48,11 @@ const decryptPrivateKey = (encryptedPrivateKey) => {
     const iv = Buffer.from(textParts.shift(), 'hex');
     const encryptedText = Buffer.from(textParts.join(':'), 'hex');
     const decipher = crypto_1.default.createDecipheriv('aes-256-cbc', Buffer.from(encryptionKey, 'hex'), iv);
-    // Update without specifying encodings since you're using Buffers
     let decrypted = Buffer.concat([decipher.update(encryptedText), decipher.final()]);
-    // Convert the final decrypted buffer to a UTF-8 string
     return decrypted.toString('utf8');
 };
 // Helper function to wait for the account to be available on the network
-const waitForAccount = (publicKey, retries = 5, delay = 2000) => __awaiter(void 0, void 0, void 0, function* () {
+const waitForAccount = (publicKey, retries = 10, delay = 5000) => __awaiter(void 0, void 0, void 0, function* () {
     for (let i = 0; i < retries; i++) {
         try {
             const account = yield server.loadAccount(publicKey);
@@ -91,16 +88,19 @@ router.post('/decrypt', (req, res) => __awaiter(void 0, void 0, void 0, function
         return res.status(500).json({ error: 'Failed to decrypt private key' });
     }
 }));
-router.post('/create', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
+    console.log('Received request');
     try {
         const { email, currency } = req.body;
         // Ensure that this feature is only available for XLM
         if (currency !== 'XLM') {
             return res.status(400).json({ error: 'This feature is only available for XLM' });
         }
+        console.log('try to create account');
         // Generate a new Stellar keypair
         const pair = Keypair.random();
+        console.log('pair created');
         // Load the funding account
         const sourceAccount = yield server.loadAccount(fundingPublicKey);
         // Create a transaction to create a new account with 10 XLM
@@ -119,6 +119,8 @@ router.post('/create', (req, res) => __awaiter(void 0, void 0, void 0, function*
         // Submit the transaction to the Stellar network
         const transactionResult = yield server.submitTransaction(transaction);
         console.log('Transaction successful:', transactionResult);
+        // Wait 5 seconds before trying to fetch the new account
+        yield new Promise(res => setTimeout(res, 5000));
         // Wait for the new account to be available on the network
         const account = yield waitForAccount(pair.publicKey());
         // Encrypt the private key

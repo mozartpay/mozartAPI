@@ -1,13 +1,20 @@
-import express, { Express, Request, Response } from "express";
+import express, { Express, Request, Response } from 'express';
 import { User } from '../models/user'; 
+import cors from 'cors';
+
+const app = express();
 const router = express.Router();
 
-router.get('/:email', async (req: Request, res: Response) => {
-  res.header("Access-Control-Allow-Origin", '*');
-  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-  res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
-  res.header('Content-Type', 'application/json');
+// Enable CORS for specific origin and allow credentials
+app.use(cors({
+  origin: 'http://localhost:3000', // Allow requests from your frontend origin
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin'],
+  credentials: true, // Allow credentials (cookies, authentication headers, etc.)
+}));
 
+// Route to get user by email
+router.get('/:email', async (req: Request, res: Response) => {
   try {
     const email = req.params.email;
 
@@ -17,39 +24,32 @@ router.get('/:email', async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Extract the desired user information
-    const userInfo = user ;
-
+    // Extract and return user information
+    const userInfo = user;
     res.status(200).json(userInfo);
   } catch (error) {
     console.error('Error:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
+
+// Route to update user's image
 router.post('/image', async (req: Request, res: Response) => {
-    res.header("Access-Control-Allow-Origin", '*');
-    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-    res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
-    res.header('Content-Type', 'application/json');
-
+  try {
     const { email, image } = req.body;
-    // console.log('email',email)
-    // console.log('image',image)
-    try {
-      const user = await User.findOneAndUpdate({ email }, { image }, { new: true });
-      console.log('try')
-      if (!user) {
-        console.log('User not found')
-        return res.status(404).json({ message: 'User not found' });
-        
-      }
-  
-      console.log('User image updated:', user);
-      return res.status(200).json({ message: 'User image updated successfully', user });
-    } catch (error) {
-      console.error('Error updating user image:', error);
-      return res.status(500).json({ message: 'User image update failed' });
-    }
-  });
 
-  export default router;
+    const user = await User.findOneAndUpdate({ email }, { image }, { new: true });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    console.log('User image updated:', user);
+    return res.status(200).json({ message: 'User image updated successfully', user });
+  } catch (error) {
+    console.error('Error updating user image:', error);
+    return res.status(500).json({ message: 'User image update failed' });
+  }
+});
+
+export default router;

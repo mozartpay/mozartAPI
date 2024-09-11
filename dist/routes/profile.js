@@ -14,19 +14,25 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const user_1 = require("../models/user");
+const cors_1 = __importDefault(require("cors"));
+const app = (0, express_1.default)();
 const router = express_1.default.Router();
+// Enable CORS for specific origin and allow credentials
+app.use((0, cors_1.default)({
+    origin: 'http://localhost:3000',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin'],
+    credentials: true, // Allow credentials (cookies, authentication headers, etc.)
+}));
+// Route to get user by email
 router.get('/:email', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    res.header("Access-Control-Allow-Origin", '*');
-    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-    res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
-    res.header('Content-Type', 'application/json');
     try {
         const email = req.params.email;
         const user = yield user_1.User.findOne({ email });
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
-        // Extract the desired user information
+        // Extract and return user information
         const userInfo = user;
         res.status(200).json(userInfo);
     }
@@ -35,19 +41,12 @@ router.get('/:email', (req, res) => __awaiter(void 0, void 0, void 0, function* 
         res.status(500).json({ message: 'Internal server error' });
     }
 }));
+// Route to update user's image
 router.post('/image', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    res.header("Access-Control-Allow-Origin", '*');
-    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-    res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
-    res.header('Content-Type', 'application/json');
-    const { email, image } = req.body;
-    // console.log('email',email)
-    // console.log('image',image)
     try {
+        const { email, image } = req.body;
         const user = yield user_1.User.findOneAndUpdate({ email }, { image }, { new: true });
-        console.log('try');
         if (!user) {
-            console.log('User not found');
             return res.status(404).json({ message: 'User not found' });
         }
         console.log('User image updated:', user);
