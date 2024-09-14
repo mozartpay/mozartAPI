@@ -89,7 +89,7 @@ router.post('/decrypt', (req, res) => __awaiter(void 0, void 0, void 0, function
     }
 }));
 router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
+    var _a, _b;
     console.log('Received request');
     try {
         const { email, currency } = req.body;
@@ -97,10 +97,25 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         if (currency !== 'XLM') {
             return res.status(400).json({ error: 'This feature is only available for XLM' });
         }
-        console.log('try to create account');
-        // Generate a new Stellar keypair
-        const pair = Keypair.random();
-        console.log('pair created');
+        // Check if the user already has a publicKeyXlm
+        const existingUser = yield user_1.User.findOne({ email });
+        if (!existingUser) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        if (existingUser.publicKeyXlm) {
+            console.log('User already has a Stellar account');
+            // Load the user's Stellar account to get the balance
+            const account = yield waitForAccount(existingUser.publicKeyXlm);
+            const balance = ((_a = account.balances.find((b) => b.asset_type === 'native')) === null || _a === void 0 ? void 0 : _a.balance) || '0';
+            // Return the existing public key and balance to the frontend
+            return res.json({
+                publicKey: existingUser.publicKeyXlm,
+                balance: balance,
+            });
+        }
+        // If the user doesn't have a Stellar account, create a new one
+        console.log('Creating a new Stellar account for the user');
+        const pair = Keypair.random(); // Generate a new Stellar keypair
         // Load the funding account
         const sourceAccount = yield server.loadAccount(fundingPublicKey);
         // Create a transaction to create a new account with 10 XLM
@@ -126,18 +141,18 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         // Encrypt the private key
         const encryptedPrivateKey = encryptPrivateKey(pair.secret());
         // Update the user's record with the new Stellar keypair and balance in MongoDB
-        const user = yield user_1.User.findOneAndUpdate({ email }, {
+        const updatedUser = yield user_1.User.findOneAndUpdate({ email }, {
             publicKeyXlm: pair.publicKey(),
             privateKeyXlm: encryptedPrivateKey, // Store the encrypted private key
         }, { new: true } // Return the updated document
         );
-        if (!user) {
+        if (!updatedUser) {
             return res.status(404).json({ error: 'User not found' });
         }
         // Send the public key and balance to the frontend, not the private key
         return res.json({
             publicKey: pair.publicKey(),
-            balance: ((_a = account.balances.find((b) => b.asset_type === 'native')) === null || _a === void 0 ? void 0 : _a.balance) || '0',
+            balance: ((_b = account.balances.find((b) => b.asset_type === 'native')) === null || _b === void 0 ? void 0 : _b.balance) || '0',
         });
     }
     catch (error) {

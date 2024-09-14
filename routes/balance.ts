@@ -45,10 +45,10 @@ router.get('/', async (req: Request, res: Response) => {
     const balance = await getBalance(user.publicKeyXlm);
     const publicKey = user.publicKeyXlm;
 
-    // Send the balance to the frontend
+    // Send the balance and public key to the frontend
     return res.json({
       balance: balance,
-      account: publicKey
+      publicKey: publicKey // Update to use `publicKey` instead of `account`
     });
   } catch (error) {
     console.error('Error retrieving balance:', error);
@@ -60,5 +60,6 @@ router.get('/', async (req: Request, res: Response) => {
     }
   }
 });
+
 
 export default router;

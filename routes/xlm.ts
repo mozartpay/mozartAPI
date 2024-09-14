@@ -96,72 +96,95 @@ router.post('/decrypt', async (req: Request, res: Response) => {
 router.post('/', async (req: Request, res: Response) => {
     console.log('Received request');
     try {
-        const { email, currency } = req.body;
-
-        // Ensure that this feature is only available for XLM
-        if (currency !== 'XLM') {
-            return res.status(400).json({ error: 'This feature is only available for XLM' });
-        }
-        console.log('try to create account');
-        // Generate a new Stellar keypair
-        const pair = Keypair.random();
-        console.log('pair created');
-        // Load the funding account
-        const sourceAccount = await server.loadAccount(fundingPublicKey);
-
-        // Create a transaction to create a new account with 10 XLM
-        const transaction = new TransactionBuilder(sourceAccount, {
-            fee: BASE_FEE,
-            networkPassphrase: Networks.TESTNET,
-        })
-            .addOperation(
-                Operation.createAccount({
-                    destination: pair.publicKey(),
-                    startingBalance: '10', // Send 10 XLM to the new account to create it
-                })
-            )
-            .setTimeout(30)
-            .build();
-
-        // Sign the transaction with the funding account's secret key
-        transaction.sign(fundingKeypair);
-
-        // Submit the transaction to the Stellar network
-        const transactionResult = await server.submitTransaction(transaction);
-        console.log('Transaction successful:', transactionResult);
-
-        // Wait 5 seconds before trying to fetch the new account
-        await new Promise(res => setTimeout(res, 5000));
-
-        // Wait for the new account to be available on the network
-        const account = await waitForAccount(pair.publicKey());
-
-        // Encrypt the private key
-        const encryptedPrivateKey = encryptPrivateKey(pair.secret());
-
-        // Update the user's record with the new Stellar keypair and balance in MongoDB
-        const user = await User.findOneAndUpdate(
-            { email },
-            {
-                publicKeyXlm: pair.publicKey(),
-                privateKeyXlm: encryptedPrivateKey, // Store the encrypted private key
-            },
-            { new: true } // Return the updated document
-        );
-
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-
-        // Send the public key and balance to the frontend, not the private key
+      const { email, currency } = req.body;
+  
+      // Ensure that this feature is only available for XLM
+      if (currency !== 'XLM') {
+        return res.status(400).json({ error: 'This feature is only available for XLM' });
+      }
+  
+      // Check if the user already has a publicKeyXlm
+      const existingUser = await User.findOne({ email });
+  
+      if (!existingUser) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+  
+      if (existingUser.publicKeyXlm) {
+        console.log('User already has a Stellar account');
+  
+        // Load the user's Stellar account to get the balance
+        const account = await waitForAccount(existingUser.publicKeyXlm);
+        const balance = account.balances.find((b: { asset_type: string; balance: string }) => b.asset_type === 'native')?.balance || '0';
+  
+        // Return the existing public key and balance to the frontend
         return res.json({
-            publicKey: pair.publicKey(),
-            balance: account.balances.find((b: { asset_type: string; balance: string }) => b.asset_type === 'native')?.balance || '0',
+          publicKey: existingUser.publicKeyXlm,
+          balance: balance,
         });
+      }
+  
+      // If the user doesn't have a Stellar account, create a new one
+      console.log('Creating a new Stellar account for the user');
+      const pair = Keypair.random(); // Generate a new Stellar keypair
+  
+      // Load the funding account
+      const sourceAccount = await server.loadAccount(fundingPublicKey);
+  
+      // Create a transaction to create a new account with 10 XLM
+      const transaction = new TransactionBuilder(sourceAccount, {
+        fee: BASE_FEE,
+        networkPassphrase: Networks.TESTNET,
+      })
+        .addOperation(
+          Operation.createAccount({
+            destination: pair.publicKey(),
+            startingBalance: '10', // Send 10 XLM to the new account to create it
+          })
+        )
+        .setTimeout(30)
+        .build();
+  
+      // Sign the transaction with the funding account's secret key
+      transaction.sign(fundingKeypair);
+  
+      // Submit the transaction to the Stellar network
+      const transactionResult = await server.submitTransaction(transaction);
+      console.log('Transaction successful:', transactionResult);
+  
+      // Wait 5 seconds before trying to fetch the new account
+      await new Promise(res => setTimeout(res, 5000));
+  
+      // Wait for the new account to be available on the network
+      const account = await waitForAccount(pair.publicKey());
+  
+      // Encrypt the private key
+      const encryptedPrivateKey = encryptPrivateKey(pair.secret());
+  
+      // Update the user's record with the new Stellar keypair and balance in MongoDB
+      const updatedUser = await User.findOneAndUpdate(
+        { email },
+        {
+          publicKeyXlm: pair.publicKey(),
+          privateKeyXlm: encryptedPrivateKey, // Store the encrypted private key
+        },
+        { new: true } // Return the updated document
+      );
+  
+      if (!updatedUser) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+  
+      // Send the public key and balance to the frontend, not the private key
+      return res.json({
+        publicKey: pair.publicKey(),
+        balance: account.balances.find((b: { asset_type: string; balance: string }) => b.asset_type === 'native')?.balance || '0',
+      });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Internal Server Error' });
+      console.error(error);
+      res.status(500).json({ error: 'Internal Server Error' });
     }
-});
+  });
+  
 
 export default router;
