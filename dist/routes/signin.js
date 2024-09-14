@@ -57,13 +57,25 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         if (!passwordMatch)
             return res.status(401).json({ message: 'Incorrect password.' });
         // Send email notification after successful login
-        mailer.send(email, 'MozartPay', `
-      We're verifying a recent sign-in for ${email}:<br>
-      Timestamp: ${new Date().toUTCString()}<br>
-      IP Address: ${req.ip}<br>
-      User agent: ${req.get('User-Agent')}<br>
-      <a href='https://www.mozartpay.com/forgot_password'>Reset Password</a> if suspicious.<br>
-    `)
+        mailer.send(email, 'MozartPay - Sign-in Verification', `
+  <h2>Sign-in Verification for MozartPay</h2>
+  <p>Hi,</p>
+  <p>We noticed a sign-in attempt associated with your account (${email}). If this was you, no further action is needed. If this seems suspicious, please review the details below:</p>
+  
+  <ul>
+    <li><strong>Timestamp:</strong> ${new Date().toUTCString()}</li>
+    <li><strong>IP Address:</strong> ${req.ip}</li>
+    <li><strong>User Agent:</strong> ${req.get('User-Agent')}</li>
+  </ul>
+  
+  <p>If this sign-in wasn't initiated by you, we strongly recommend you <a href='https://www.mozartpay.com/forgot_password'>reset your password immediately</a>.</p>
+
+  <p>Your security is important to us. If you have any questions or concerns, feel free to contact our support team.</p>
+
+  <p>Best regards,<br>
+  The MozartPay Team<br>
+  <small>Powered by OG Technologies EU, based in Vienna, Austria</small></p>
+`)
             .then(result => console.log('Email sent: ', result))
             .catch(error => console.error('Error sending email: ', error));
         return res.status(200).json({

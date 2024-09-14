@@ -43,10 +43,12 @@ router.get('/', async (req: Request, res: Response) => {
 
     // Get the balance of the Stellar account
     const balance = await getBalance(user.publicKeyXlm);
+    const account = user.publicKeyXlm;
 
     // Send the balance to the frontend
     return res.json({
       balance: balance,
+      account: account
     });
   } catch (error) {
     console.error('Error retrieving balance:', error);
