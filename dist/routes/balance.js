@@ -45,11 +45,11 @@ router.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         }
         // Get the balance of the Stellar account
         const balance = yield getBalance(user.publicKeyXlm);
-        const account = user.publicKeyXlm;
+        const publicKey = user.publicKeyXlm;
         // Send the balance to the frontend
         return res.json({
             balance: balance,
-            account: account
+            account: publicKey
         });
     }
     catch (error) {
