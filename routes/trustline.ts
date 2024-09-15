@@ -110,11 +110,15 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     // If any trustlines are missing, create a transaction to add them
-    const transaction = new StellarSdk.TransactionBuilder(account, {
+    let transactionBuilder = new StellarSdk.TransactionBuilder(account, {
       fee: StellarSdk.BASE_FEE,
       networkPassphrase: StellarSdk.Networks.TESTNET,
-    })
-      .addOperations(operations) // Add all pending trustline operations
+    });
+
+    // Add each operation individually
+    operations.forEach(op => transactionBuilder = transactionBuilder.addOperation(op));
+
+    const transaction = transactionBuilder
       .setTimeout(30)
       .build();
 
@@ -126,8 +130,8 @@ router.post('/', async (req: Request, res: Response) => {
       message: 'Trustline(s) created successfully',
       result,
       publicKey: account.id, // Return "publicKey" instead of "account_id"
-      hasUSDCTrustline: true,
-      hasEURCTrustline: true,
+      hasUSDCTrustline: !hasUsdcTrustline,
+      hasEURCTrustline: !hasEurcTrustline,
     });
   } catch (error) {
     // Cast 'error' as 'Error' to access its message property
@@ -138,4 +142,3 @@ router.post('/', async (req: Request, res: Response) => {
 });
 
 export default router;
-
