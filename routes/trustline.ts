@@ -141,46 +141,4 @@ router.post('/', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/balances', async (req: Request, res: Response) => {
-  try {
-    const { email } = req.query; // Retrieve email from query string
-
-    // Fetch the user from the database
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    if (!user.privateKeyXlm) {
-      return res.status(400).json({ error: 'Private key not available' });
-    }
-
-    // Decrypt the user's private key
-    const decryptedPrivateKey = decryptPrivateKey(user.privateKeyXlm);
-
-    // Create the Stellar keypair from the decrypted private key
-    const sourceKeypair = StellarSdk.Keypair.fromSecret(decryptedPrivateKey);
-
-    // Load the user's account from the Stellar network
-    const account = await server.loadAccount(sourceKeypair.publicKey());
-
-    // Fetch all balances (XLM, USDC, EURC, etc.)
-    const balances = account.balances.map((balance: Balance) => ({
-      asset_code: balance.asset_code || 'XLM', // Default to XLM if no asset_code
-      asset_issuer: balance.asset_issuer || null,
-      balance: balance.balance
-    }));
-
-    // Return the balances to the frontend
-    return res.status(200).json({
-      balances,
-      publicKey: account.id, // Return public key
-    });
-  } catch (error) {
-    const err = error as Error;
-    console.error('Error fetching balances:', err.message);
-    return res.status(500).json({ error: err.message });
-  }
-});
-
 export default router;

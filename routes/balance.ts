@@ -1,65 +1,86 @@
-import express, { Request, Response, Router } from 'express';
+import express, { Request, Response } from 'express';
 import StellarSdk from '@stellar/stellar-sdk';
+import { User } from '../models/user'; // Import User model
+import crypto from 'crypto';
 import dotenv from 'dotenv';
-import { User } from '../models/user';
 
-dotenv.config({ path: './config.env' });
+// Load environment variables
+dotenv.config();
 
-const router: Router = express.Router();
-const server = new StellarSdk.Horizon.Server('https://horizon-testnet.stellar.org'); // Connect to the Stellar testnet
+const router = express.Router();
+const server = new StellarSdk.Horizon.Server('https://horizon-testnet.stellar.org'); // Stellar testnet URL
 
-// Define a type for the balance object
-type Balance = {
-  balance: string;
-  asset_type: string;
-};
-
-// Helper function to get the balance of a Stellar account
-const getBalance = async (publicKey: string): Promise<string> => {
+// Define the decryptPrivateKey function
+const decryptPrivateKey = (encryptedPrivateKey: string): string => {
+  const encryptionKey = process.env.ENCRYPTION_SECRET_KEY as string;
   try {
-    const account = await server.loadAccount(publicKey);
-    const xlmBalance = account.balances.find((b: Balance) => b.asset_type === 'native')?.balance || '0';
-    return xlmBalance;
+    const textParts = encryptedPrivateKey.split(':');
+    const iv = textParts[0]; 
+    const encryptedText = textParts[1];
+
+    const ivBuffer = Buffer.from(iv, 'hex');
+    const encryptedTextBuffer = Buffer.from(encryptedText, 'hex');
+
+    const encryptionKeyBuffer = Buffer.from(encryptionKey, 'hex');
+
+    const decipher = crypto.createDecipheriv('aes-256-cbc', encryptionKeyBuffer, ivBuffer);
+    let decrypted = Buffer.concat([decipher.update(encryptedTextBuffer), decipher.final()]);
+
+    return decrypted.toString('utf8');
   } catch (error) {
-    console.error('Error loading account:', error);
-    throw new Error('Failed to load account');
+    console.error('Failed to decrypt private key:', error);
+    throw new Error('Failed to decrypt private key');
   }
 };
 
-router.get('/', async (req: Request, res: Response) => {
+// Define the Balance type with asset_code and asset_issuer
+interface Balance {
+  asset_code?: string;    // Asset code (e.g., USDC, EURC), optional for XLM
+  asset_issuer?: string;  // Asset issuer, optional for XLM
+  balance: string;        // Balance amount as string
+}
+
+// Route to fetch and return balances
+router.get('/balance', async (req: Request, res: Response) => {
   try {
-    const { email } = req.query;
+    const { email } = req.query; // Retrieve email from query string
 
-    if (!email) {
-      return res.status(400).json({ error: 'Email is required' });
+    // Fetch the user from the database
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
     }
 
-    // Find the user by email
-    const user = await User.findOne({ email: email as string });
-
-    if (!user || !user.publicKeyXlm) {
-      return res.status(404).json({ error: 'User or Stellar account not found' });
+    if (!user.privateKeyXlm) {
+      return res.status(400).json({ error: 'Private key not available' });
     }
 
-    // Get the balance of the Stellar account
-    const balance = await getBalance(user.publicKeyXlm);
-    const publicKey = user.publicKeyXlm;
+    // Decrypt the user's private key
+    const decryptedPrivateKey = decryptPrivateKey(user.privateKeyXlm);
 
-    // Send the balance and public key to the frontend
-    return res.json({
-      balance: balance,
-      publicKey: publicKey // Update to use `publicKey` instead of `account`
+    // Create the Stellar keypair from the decrypted private key
+    const sourceKeypair = StellarSdk.Keypair.fromSecret(decryptedPrivateKey);
+
+    // Load the user's account from the Stellar network
+    const account = await server.loadAccount(sourceKeypair.publicKey());
+
+    // Fetch all balances (XLM, USDC, EURC, etc.)
+    const balances = account.balances.map((balance: Balance) => ({
+      asset_code: balance.asset_code || 'XLM', // Default to XLM if no asset_code
+      asset_issuer: balance.asset_issuer || null,
+      balance: balance.balance
+    }));
+
+    // Return the balances to the frontend
+    return res.status(200).json({
+      balances,
+      publicKey: account.id, // Return public key
     });
   } catch (error) {
-    console.error('Error retrieving balance:', error);
-
-    if (error instanceof Error) {
-      return res.status(500).json({ error: 'Failed to retrieve balance', details: error.message });
-    } else {
-      return res.status(500).json({ error: 'Failed to retrieve balance', details: 'An unknown error occurred' });
-    }
+    const err = error as Error;
+    console.error('Error fetching balances:', err.message);
+    return res.status(500).json({ error: err.message });
   }
 });
-
 
 export default router;

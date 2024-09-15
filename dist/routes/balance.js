@@ -14,52 +14,66 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const stellar_sdk_1 = __importDefault(require("@stellar/stellar-sdk"));
+const user_1 = require("../models/user"); // Import User model
+const crypto_1 = __importDefault(require("crypto"));
 const dotenv_1 = __importDefault(require("dotenv"));
-const user_1 = require("../models/user");
-dotenv_1.default.config({ path: './config.env' });
+// Load environment variables
+dotenv_1.default.config();
 const router = express_1.default.Router();
-const server = new stellar_sdk_1.default.Horizon.Server('https://horizon-testnet.stellar.org'); // Connect to the Stellar testnet
-// Helper function to get the balance of a Stellar account
-const getBalance = (publicKey) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
+const server = new stellar_sdk_1.default.Horizon.Server('https://horizon-testnet.stellar.org'); // Stellar testnet URL
+// Define the decryptPrivateKey function
+const decryptPrivateKey = (encryptedPrivateKey) => {
+    const encryptionKey = process.env.ENCRYPTION_SECRET_KEY;
     try {
-        const account = yield server.loadAccount(publicKey);
-        const xlmBalance = ((_a = account.balances.find((b) => b.asset_type === 'native')) === null || _a === void 0 ? void 0 : _a.balance) || '0';
-        return xlmBalance;
+        const textParts = encryptedPrivateKey.split(':');
+        const iv = textParts[0];
+        const encryptedText = textParts[1];
+        const ivBuffer = Buffer.from(iv, 'hex');
+        const encryptedTextBuffer = Buffer.from(encryptedText, 'hex');
+        const encryptionKeyBuffer = Buffer.from(encryptionKey, 'hex');
+        const decipher = crypto_1.default.createDecipheriv('aes-256-cbc', encryptionKeyBuffer, ivBuffer);
+        let decrypted = Buffer.concat([decipher.update(encryptedTextBuffer), decipher.final()]);
+        return decrypted.toString('utf8');
     }
     catch (error) {
-        console.error('Error loading account:', error);
-        throw new Error('Failed to load account');
+        console.error('Failed to decrypt private key:', error);
+        throw new Error('Failed to decrypt private key');
     }
-});
-router.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+};
+// Route to fetch and return balances
+router.get('/balance', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { email } = req.query;
-        if (!email) {
-            return res.status(400).json({ error: 'Email is required' });
+        const { email } = req.query; // Retrieve email from query string
+        // Fetch the user from the database
+        const user = yield user_1.User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
         }
-        // Find the user by email
-        const user = yield user_1.User.findOne({ email: email });
-        if (!user || !user.publicKeyXlm) {
-            return res.status(404).json({ error: 'User or Stellar account not found' });
+        if (!user.privateKeyXlm) {
+            return res.status(400).json({ error: 'Private key not available' });
         }
-        // Get the balance of the Stellar account
-        const balance = yield getBalance(user.publicKeyXlm);
-        const publicKey = user.publicKeyXlm;
-        // Send the balance and public key to the frontend
-        return res.json({
-            balance: balance,
-            publicKey: publicKey // Update to use `publicKey` instead of `account`
+        // Decrypt the user's private key
+        const decryptedPrivateKey = decryptPrivateKey(user.privateKeyXlm);
+        // Create the Stellar keypair from the decrypted private key
+        const sourceKeypair = stellar_sdk_1.default.Keypair.fromSecret(decryptedPrivateKey);
+        // Load the user's account from the Stellar network
+        const account = yield server.loadAccount(sourceKeypair.publicKey());
+        // Fetch all balances (XLM, USDC, EURC, etc.)
+        const balances = account.balances.map((balance) => ({
+            asset_code: balance.asset_code || 'XLM',
+            asset_issuer: balance.asset_issuer || null,
+            balance: balance.balance
+        }));
+        // Return the balances to the frontend
+        return res.status(200).json({
+            balances,
+            publicKey: account.id, // Return public key
         });
     }
     catch (error) {
-        console.error('Error retrieving balance:', error);
-        if (error instanceof Error) {
-            return res.status(500).json({ error: 'Failed to retrieve balance', details: error.message });
-        }
-        else {
-            return res.status(500).json({ error: 'Failed to retrieve balance', details: 'An unknown error occurred' });
-        }
+        const err = error;
+        console.error('Error fetching balances:', err.message);
+        return res.status(500).json({ error: err.message });
     }
 }));
 exports.default = router;
