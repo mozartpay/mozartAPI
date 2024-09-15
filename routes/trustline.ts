@@ -35,13 +35,12 @@ const decryptPrivateKey = (encryptedPrivateKey: string): string => {
 
 // Define the Balance type
 interface Balance {
-  asset_code?: string;    // Asset code (e.g., USDC), optional for XLM
+  asset_code?: string;    // Asset code (e.g., USDC, EURC), optional for XLM
   asset_issuer?: string;  // Asset issuer, optional for XLM
   balance: string;        // Balance amount as string
 }
 
-// Route to establish a trustline with USDC
-
+// Route to establish trustlines with USDC and EURC
 router.post('/', async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
@@ -67,36 +66,55 @@ router.post('/', async (req: Request, res: Response) => {
 
     // USDC asset details on Stellar testnet
     const circleUsdcIssuer = process.env.CIRCLE_USDC_ISSUER as string;
-    if (!circleUsdcIssuer) {
-      return res.status(500).json({ error: 'Circle USDC issuer is not configured in environment' });
+    const circleEurcIssuer = process.env.CIRCLE_EURC_ISSUER as string;
+    
+    if (!circleUsdcIssuer || !circleEurcIssuer) {
+      return res.status(500).json({ error: 'Circle USDC or EURC issuer is not configured in environment' });
     }
 
     const usdcAsset = new StellarSdk.Asset('USDC', circleUsdcIssuer);
+    const eurcAsset = new StellarSdk.Asset('EURC', circleEurcIssuer);
 
-    // Check if the trustline already exists
-    const hasTrustline = account.balances.some((balance: Balance) => 
+    // Check if the trustlines already exist
+    const hasUsdcTrustline = account.balances.some((balance: Balance) => 
       balance.asset_code === 'USDC' && balance.asset_issuer === circleUsdcIssuer
     );
+    
+    const hasEurcTrustline = account.balances.some((balance: Balance) => 
+      balance.asset_code === 'EURC' && balance.asset_issuer === circleEurcIssuer
+    );
 
-    if (hasTrustline) {
-      // Trustline already exists, return the public key and trustline status
+    // Prepare operations to add missing trustlines
+    const operations = [];
+
+    if (!hasUsdcTrustline) {
+      operations.push(StellarSdk.Operation.changeTrust({
+        asset: usdcAsset, // USDC asset
+      }));
+    }
+
+    if (!hasEurcTrustline) {
+      operations.push(StellarSdk.Operation.changeTrust({
+        asset: eurcAsset, // EURC asset
+      }));
+    }
+
+    // If all trustlines exist, return without making a transaction
+    if (operations.length === 0) {
       return res.status(200).json({
-        message: 'USDC trustline already exists',
+        message: 'USDC and EURC trustlines already exist',
         publicKey: account.id, // Use "publicKey" instead of "account_id"
-        hasUSDCTrustline: true
+        hasUSDCTrustline: true,
+        hasEURCTrustline: true,
       });
     }
 
-    // If no trustline exists, create one
+    // If any trustlines are missing, create a transaction to add them
     const transaction = new StellarSdk.TransactionBuilder(account, {
       fee: StellarSdk.BASE_FEE,
       networkPassphrase: StellarSdk.Networks.TESTNET,
     })
-      .addOperation(
-        StellarSdk.Operation.changeTrust({
-          asset: usdcAsset, // USDC asset
-        })
-      )
+      .addOperations(operations) // Add all pending trustline operations
       .setTimeout(30)
       .build();
 
@@ -105,10 +123,11 @@ router.post('/', async (req: Request, res: Response) => {
     const result = await server.submitTransaction(transaction);
 
     return res.status(200).json({
-      message: 'Trustline created successfully',
+      message: 'Trustline(s) created successfully',
       result,
       publicKey: account.id, // Return "publicKey" instead of "account_id"
-      hasUSDCTrustline: true
+      hasUSDCTrustline: true,
+      hasEURCTrustline: true,
     });
   } catch (error) {
     // Cast 'error' as 'Error' to access its message property
@@ -119,5 +138,4 @@ router.post('/', async (req: Request, res: Response) => {
 });
 
 export default router;
-
 
