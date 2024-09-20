@@ -51,9 +51,12 @@ app.use(bodyParser.json({ limit: '30mb' }));
 // Connect to database
 connectToDB();
 
-app.get('/.well-known/stellar.toml', (req, res) => {
-  res.sendFile(path.join(__dirname, './stellar.toml'));
-});
+// app.get('/.well-known/stellar.toml', (req, res) => {
+//   res.sendFile(path.join(__dirname, './stellar.toml'));
+// });
+
+// Serve the stellar.toml file
+app.use('/.well-known', express.static(path.join(__dirname, '.well-known')));
 
 // Default Route
 app.get("/", (req: Request, res: Response) => {
