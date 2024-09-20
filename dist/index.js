@@ -14,12 +14,13 @@ const order_1 = __importDefault(require("./routes/order"));
 const profile_1 = __importDefault(require("./routes/profile"));
 const subscription_1 = __importDefault(require("./routes/subscription"));
 const convert_1 = __importDefault(require("./routes/convert"));
-const transaction_1 = __importDefault(require("./routes/transaction"));
+const sendMoney_1 = __importDefault(require("./routes/sendMoney"));
 const requestMoney_1 = __importDefault(require("./routes/requestMoney"));
 const identity_1 = __importDefault(require("./routes/identity"));
 const trustline_1 = __importDefault(require("./routes/trustline"));
 const balance_1 = __importDefault(require("./routes/balance"));
 const xlm_1 = __importDefault(require("./routes/xlm"));
+const path_1 = __importDefault(require("path"));
 require('dotenv').config();
 const port = process.env.PORT || '8000';
 const app = (0, express_1.default)();
@@ -46,6 +47,9 @@ app.use(express_1.default.json());
 app.use(body_parser_1.default.json({ limit: '30mb' }));
 // Connect to database
 (0, db_1.default)();
+app.get('/.well-known/stellar.toml', (req, res) => {
+    res.sendFile(path_1.default.join(__dirname, './stellar.toml'));
+});
 // Default Route
 app.get("/", (req, res) => {
     res.send("Hello, Mozart Typescript Node.js server!");
@@ -58,7 +62,7 @@ app.use('/api/profile', profile_1.default);
 app.use('/api/v1', order_1.default);
 app.use('/api/subscribe', subscription_1.default);
 app.use('/api/convert', convert_1.default);
-app.use('/api/transaction', transaction_1.default);
+app.use('/api/send', sendMoney_1.default);
 app.use('/api/request', requestMoney_1.default);
 app.use('/api/identity', identity_1.default);
 app.use('/api/trustline', trustline_1.default);

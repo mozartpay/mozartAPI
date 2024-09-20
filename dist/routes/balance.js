@@ -41,7 +41,7 @@ const decryptPrivateKey = (encryptedPrivateKey) => {
     }
 };
 // Route to fetch and return balances
-router.get('/balance', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { email } = req.query; // Retrieve email from query string
         // Fetch the user from the database

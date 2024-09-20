@@ -9,17 +9,21 @@ import order from './routes/order';
 import profile from './routes/profile';
 import subscriptionRoutes from './routes/subscription';
 import Money from './routes/convert';
-import Transaction from './routes/transaction';
+import SendMoney from './routes/sendMoney';
 import MoneyRequest from './routes/requestMoney';
 import Identity from './routes/identity';
 import Trustline from './routes/trustline';
 import Balance from "./routes/balance";
 import Xlm from "./routes/xlm";
+import path from 'path';
+
+
 
 require('dotenv').config();
 
 const port = process.env.PORT || '8000';
 const app: Express = express();
+
 
 // Define allowed origins for development and production
 const allowedOrigins = ['https://www.mozartpay.com', 'http://localhost:3000','https://mozart-api-21ea5fd801a8.herokuapp.com'];
@@ -47,6 +51,10 @@ app.use(bodyParser.json({ limit: '30mb' }));
 // Connect to database
 connectToDB();
 
+app.get('/.well-known/stellar.toml', (req, res) => {
+  res.sendFile(path.join(__dirname, './stellar.toml'));
+});
+
 // Default Route
 app.get("/", (req: Request, res: Response) => {
   res.send("Hello, Mozart Typescript Node.js server!");
@@ -60,7 +68,7 @@ app.use('/api/profile', profile);
 app.use('/api/v1', order);
 app.use('/api/subscribe', subscriptionRoutes);
 app.use('/api/convert', Money);
-app.use('/api/transaction', Transaction);
+app.use('/api/send', SendMoney);
 app.use('/api/request', MoneyRequest);
 app.use('/api/identity', Identity);
 app.use('/api/trustline', Trustline);
