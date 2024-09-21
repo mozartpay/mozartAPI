@@ -6,7 +6,7 @@ import StellarSdk from '@stellar/stellar-sdk';
 import crypto from 'crypto';
 
 const mailer = new NodeMailgun();
-mailer.apiKey = 'key-c8d12b7428fbe666e074108aaa0820bc' || 'key-yourkeyhere';
+mailer.apiKey = process.env.MAILGUN_API_KEY || 'key-yourkeyhere';
 mailer.domain = 'mozartpay.com';
 mailer.options = {
     host: 'api.eu.mailgun.net',
@@ -40,7 +40,7 @@ const sendStellarTransaction = async (senderPrivateKey: string, receiverPublicKe
         const senderKeypair = Keypair.fromSecret(senderPrivateKey);
         const senderAccount = await server.loadAccount(senderKeypair.publicKey());
 
-        // Convert amount to a string and ensure it has at most 7 decimal places
+        // Ensure amount is a valid number and formatted correctly
         const formattedAmount = parseFloat(amount as string).toFixed(7).toString(); // Convert to number first, then format
 
         // Build the transaction
@@ -62,9 +62,9 @@ const sendStellarTransaction = async (senderPrivateKey: string, receiverPublicKe
         // Submit the transaction to the Stellar network
         const transactionResult = await server.submitTransaction(transaction);
         return transactionResult;
-    } catch (error) {
-        console.error('Error signing or submitting the Stellar transaction:', error);
-        throw error;
+    } catch (error: any) {
+        console.error('Error signing or submitting the Stellar transaction:', error.response?.data || error);
+        throw new Error('Failed to process the Stellar transaction.');
     }
 };
 
@@ -79,7 +79,6 @@ router.post('/', async (req: Request, res: Response) => {
     try {
         // Check if the receiver has a MozartPay account
         const receiver = await User.findOne({ email: receiverEmail });
-
         if (!receiver) {
             return res.status(400).json({ error: 'Receiver does not have a MozartPay account.' });
         }
@@ -97,16 +96,13 @@ router.post('/', async (req: Request, res: Response) => {
             receiverName,
             receiverEmail,
         });
-
         await newTransaction.save();
 
         // Decrypt the sender's private key from the user model
         const sender = await User.findOne({ email: senderEmail });
-
         if (!sender || !sender.privateKeyXlm) {
             return res.status(400).json({ error: 'Sender does not have a valid private key.' });
         }
-
         const decryptedPrivateKey = decryptPrivateKey(sender.privateKeyXlm);
 
         // Sign and send the Stellar transaction
@@ -123,7 +119,7 @@ router.post('/', async (req: Request, res: Response) => {
                 "If you're aware of this payment, please disregard this notice.<br><br>" +
                 "Thanks, We will get in touch with you as soon as the payment has been made. <br><br>")
             .then((result) => console.log('Receiver email sent', result))
-            .catch((error) => console.error('Error: ', error));
+            .catch((error: any) => console.error('Error sending email to receiver: ', error));
 
         // Send email notification to sender
         mailer
@@ -134,13 +130,14 @@ router.post('/', async (req: Request, res: Response) => {
                 "If you're aware of this payment, please disregard this notice.<br><br>" +
                 "Thanks,<br><br>")
             .then((result) => console.log('Sender email sent', result))
-            .catch((error) => console.error('Error: ', error));
+            .catch((error: any) => console.error('Error sending email to sender: ', error));
 
         res.status(201).json({ message: 'Transaction processed and email sent successfully.' });
-    } catch (error) {
-        console.error('Error processing transaction:', error);
+    } catch (error: any) {
+        console.error('Error processing transaction:', error.message || error);
         res.status(500).json({ error: 'An error occurred while processing the transaction.' });
     }
 });
 
 export default router;
+
