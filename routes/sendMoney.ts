@@ -34,11 +34,14 @@ const decryptPrivateKey = (encryptedPrivateKey: string): string => {
 };
 
 // Helper function to sign and send a transaction using Stellar SDK
-const sendStellarTransaction = async (senderPrivateKey: string, receiverPublicKey: string, amount: string) => {
+const sendStellarTransaction = async (senderPrivateKey: string, receiverPublicKey: string, amount: number) => {
     try {
         // Load the funding account (sender)
         const senderKeypair = Keypair.fromSecret(senderPrivateKey);
         const senderAccount = await server.loadAccount(senderKeypair.publicKey());
+
+        // Convert amount to a string and ensure it has at most 7 decimal places
+        const formattedAmount = amount.toFixed(7).toString();
 
         // Build the transaction
         const transaction = new TransactionBuilder(senderAccount, {
@@ -48,7 +51,7 @@ const sendStellarTransaction = async (senderPrivateKey: string, receiverPublicKe
             .addOperation(Operation.payment({
                 destination: receiverPublicKey,
                 asset: StellarSdk.Asset.native(),
-                amount: amount, // Amount to send
+                amount: formattedAmount, // Correctly formatted string amount
             }))
             .setTimeout(30)
             .build();
@@ -64,6 +67,7 @@ const sendStellarTransaction = async (senderPrivateKey: string, receiverPublicKe
         throw error;
     }
 };
+
 
 router.post('/', async (req: Request, res: Response) => {
     res.header("Access-Control-Allow-Origin", '*');
