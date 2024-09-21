@@ -17,7 +17,7 @@ mailer.init();
 
 const router = express.Router();
 
-const server = new StellarSdk.Server('https://horizon-testnet.stellar.org'); // Use testnet for now
+const server = new StellarSdk.Horizon.Server('https://horizon-testnet.stellar.org'); // Use testnet for now
 const { TransactionBuilder, Networks, BASE_FEE, Operation, Keypair } = StellarSdk;
 const encryptionKey = process.env.ENCRYPTION_SECRET_KEY as string; // Ensure this is available in your .env file
 
