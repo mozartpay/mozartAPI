@@ -5,7 +5,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const db_1 = __importDefault(require("./db"));
-const cors_1 = __importDefault(require("cors"));
+const cors_1 = __importDefault(require("./cors"));
+const sep0001_1 = __importDefault(require("./routes/SEPs/sep0001"));
+const sep0002_1 = __importDefault(require("./routes/SEPs/sep0002"));
 const body_parser_1 = __importDefault(require("body-parser"));
 const withdraw_1 = __importDefault(require("./routes/withdraw"));
 const signin_1 = __importDefault(require("./routes/signin"));
@@ -20,38 +22,18 @@ const identity_1 = __importDefault(require("./routes/identity"));
 const trustline_1 = __importDefault(require("./routes/trustline"));
 const balance_1 = __importDefault(require("./routes/balance"));
 const xlm_1 = __importDefault(require("./routes/xlm"));
-const path_1 = __importDefault(require("path"));
 require('dotenv').config();
 const port = process.env.PORT || '8000';
 const app = (0, express_1.default)();
-// Define allowed origins for development and production
-const allowedOrigins = ['https://www.mozartpay.com', 'http://localhost:3000', 'https://mozart-api-21ea5fd801a8.herokuapp.com'];
-// CORS Middleware
-app.use((0, cors_1.default)({
-    origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests) and allowed origins
-        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-            callback(null, true);
-        }
-        else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-    credentials: true,
-    methods: 'GET,POST,PUT,DELETE,OPTIONS',
-    allowedHeaders: 'Origin,X-Requested-With,Content-Type,Accept,Authorization',
-    optionsSuccessStatus: 200 // For legacy browser support
-}));
+(0, cors_1.default)();
 // Middleware for parsing JSON requests
 app.use(express_1.default.json());
 app.use(body_parser_1.default.json({ limit: '30mb' }));
 // Connect to database
 (0, db_1.default)();
-app.get('/.well-known/stellar.toml', (req, res) => {
-    res.sendFile(path_1.default.join(__dirname, './stellar.toml'));
-});
-// Default Route
-app.get("/", (req, res) => {
+(0, sep0001_1.default)();
+// Default route
+app.get("/", (res) => {
     res.send("Hello, Mozart Typescript Node.js server!");
 });
 // Define API routes
@@ -68,6 +50,7 @@ app.use('/api/identity', identity_1.default);
 app.use('/api/trustline', trustline_1.default);
 app.use('/api/balance', balance_1.default);
 app.use('/api/xlm', xlm_1.default);
+app.use('/api/federation', sep0002_1.default);
 // Start the server
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);

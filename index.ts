@@ -1,6 +1,9 @@
 import express, { Express, Request, Response } from "express";
+
 import connectToDB from './db';
-import cors from 'cors';
+import corsMiddleware from './cors';
+import runSepOne from './routes/SEPs/sep0001';
+import Federation from "./routes/SEPs/sep0002";
 import bodyParser from 'body-parser';
 import withdraw from './routes/withdraw';
 import signinRouter from './routes/signin';
@@ -15,8 +18,6 @@ import Identity from './routes/identity';
 import Trustline from './routes/trustline';
 import Balance from "./routes/balance";
 import Xlm from "./routes/xlm";
-import path from 'path';
-
 
 
 require('dotenv').config();
@@ -24,25 +25,7 @@ require('dotenv').config();
 const port = process.env.PORT || '8000';
 const app: Express = express();
 
-
-// Define allowed origins for development and production
-const allowedOrigins = ['https://www.mozartpay.com', 'http://localhost:3000','https://mozart-api-21ea5fd801a8.herokuapp.com'];
-
-// CORS Middleware
-app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests) and allowed origins
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,  // Allow credentials (cookies, authorization headers)
-  methods: 'GET,POST,PUT,DELETE,OPTIONS',
-  allowedHeaders: 'Origin,X-Requested-With,Content-Type,Accept,Authorization',
-  optionsSuccessStatus: 200  // For legacy browser support
-}));
+corsMiddleware()
 
 // Middleware for parsing JSON requests
 app.use(express.json());
@@ -51,57 +34,10 @@ app.use(bodyParser.json({ limit: '30mb' }));
 // Connect to database
 connectToDB();
 
-// app.get('/.well-known/stellar.toml', (req, res) => {
-//   res.sendFile(path.join(__dirname, './stellar.toml'));
-// });
+runSepOne()
 
-// Serve the stellar.toml file
-app.use('/.well-known', express.static(path.join(__dirname, '.well-known')));
-
-interface User {
-  stellar_address: string;
-  account_id: string;
-  memo_type?: string;
-  memo?: string;
-}
-
-const users: { [key: string]: User } = {
-  'bob': {
-    stellar_address: 'bob*mozartpay.com',
-    account_id: 'Gxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-    memo_type: 'id',
-    memo: '123456789',
-  },
-  'alice': {
-    stellar_address: 'alice*mozartpay.com',
-    account_id: 'Gyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy',
-  }
-};
-
-app.get('/federation', (req, res) => {
-  const { q, type } = req.query;
-
-  if (!q || !type) {
-    return res.status(400).json({ error: 'Missing query parameters' });
-  }
-
-  const qValue = Array.isArray(q) ? q[0] : q;
-  if (typeof qValue === 'string') {
-    const [username, domain] = qValue.split('*');
-    
-    if (domain !== 'mozartpay.com' || !users[username]) {
-      return res.status(404).json({ error: 'Stellar address not found' });
-    }
-
-    return res.status(200).json(users[username]);
-  } else {
-    return res.status(400).json({ error: 'Invalid query parameter' });
-  }
-});
-
-
-// Default Route
-app.get("/", (req: Request, res: Response) => {
+// Default route
+app.get("/", (res: Response) => {
   res.send("Hello, Mozart Typescript Node.js server!");
 });
 
@@ -119,6 +55,7 @@ app.use('/api/identity', Identity);
 app.use('/api/trustline', Trustline);
 app.use('/api/balance', Balance);
 app.use('/api/xlm', Xlm);
+app.use('/api/federation', Federation);
 
 // Start the server
 app.listen(port, () => {
