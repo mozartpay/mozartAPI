@@ -1,5 +1,5 @@
 import express, { Express, Request, Response } from "express";
-
+import cors from 'cors';
 import connectToDB from './db';
 import corsMiddleware from './cors';
 import runSepOne from './routes/SEPs/sep0001';
@@ -25,7 +25,22 @@ require('dotenv').config();
 const port = process.env.PORT || '8000';
 const app: Express = express();
 
-corsMiddleware()
+const allowedOrigins = ['https://www.mozartpay.com', 'http://localhost:3000', 'https://mozart-api-21ea5fd801a8.herokuapp.com'];
+
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: 'GET,POST,PUT,DELETE,OPTIONS',
+  allowedHeaders: 'Origin,X-Requested-With,Content-Type,Accept,Authorization',
+  optionsSuccessStatus: 200
+}));
 
 // Middleware for parsing JSON requests
 app.use(express.json());
