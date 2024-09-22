@@ -22,9 +22,12 @@ const identity_1 = __importDefault(require("./routes/identity"));
 const trustline_1 = __importDefault(require("./routes/trustline"));
 const balance_1 = __importDefault(require("./routes/balance"));
 const xlm_1 = __importDefault(require("./routes/xlm"));
+const notification_1 = __importDefault(require("./routes/notification"));
+const helmet_1 = __importDefault(require("helmet"));
 require('dotenv').config();
 const port = process.env.PORT || '8000';
 const app = (0, express_1.default)();
+app.use((0, helmet_1.default)());
 const allowedOrigins = ['https://www.mozartpay.com', 'http://localhost:3000', 'https://mozart-api-21ea5fd801a8.herokuapp.com'];
 app.use((0, cors_1.default)({
     origin: function (origin, callback) {
@@ -43,6 +46,17 @@ app.use((0, cors_1.default)({
 // Middleware for parsing JSON requests
 app.use(express_1.default.json());
 app.use(body_parser_1.default.json({ limit: '30mb' }));
+const enforceHTTPS = (req, res, next) => {
+    if (req.headers['x-forwarded-proto'] !== 'https') {
+        return res.redirect(`https://${req.hostname}${req.url}`);
+    }
+    next();
+};
+// Use in production only
+if (process.env.NODE_ENV === 'production') {
+    console.log("Running enforceHTTPS");
+    app.use(enforceHTTPS);
+}
 // Connect to database
 (0, db_1.default)();
 (0, sep0001_1.default)();
@@ -65,6 +79,7 @@ app.use('/api/trustline', trustline_1.default);
 app.use('/api/balance', balance_1.default);
 app.use('/api/xlm', xlm_1.default);
 app.use('/api/federation', sep0002_1.default);
+app.use('/api/notifications', notification_1.default);
 // Start the server
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);

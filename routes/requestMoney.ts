@@ -1,9 +1,10 @@
-// routes/api.ts
 import express, { Request, Response } from 'express';
 import MoneyRequest, { IMoneyRequest } from '../models/MoneyRequest';
 import { NodeMailgun } from 'ts-mailgun';
+
 const mailer = new NodeMailgun();
-mailer.apiKey =  'key-c8d12b7428fbe666e074108aaa0820bc' || 'key-yourkeyhere'
+require('dotenv').config();
+mailer.apiKey =  process.env.MAILGUN_API_KEY || 'key-yourkeyhere'
 mailer.domain = 'mozartpay.com';
 mailer.options = {
   host: 'api.eu.mailgun.net'

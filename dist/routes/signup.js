@@ -51,7 +51,7 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             throw new Error('JWT secret is not defined in environment variables.');
         }
         const token = jsonwebtoken_1.default.sign({ _id: (_a = newUser._id) === null || _a === void 0 ? void 0 : _a.toString(), name: newUser.name }, jwtSecret, {
-            expiresIn: '99 days',
+            expiresIn: '1 hour',
         });
         newUser.token = token;
         const savedUser = yield newUser.save();

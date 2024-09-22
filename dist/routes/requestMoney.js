@@ -12,12 +12,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-// routes/api.ts
 const express_1 = __importDefault(require("express"));
 const MoneyRequest_1 = __importDefault(require("../models/MoneyRequest"));
 const ts_mailgun_1 = require("ts-mailgun");
 const mailer = new ts_mailgun_1.NodeMailgun();
-mailer.apiKey = 'key-c8d12b7428fbe666e074108aaa0820bc' || 'key-yourkeyhere';
+require('dotenv').config();
+mailer.apiKey = process.env.MAILGUN_API_KEY || 'key-yourkeyhere';
 mailer.domain = 'mozartpay.com';
 mailer.options = {
     host: 'api.eu.mailgun.net'
