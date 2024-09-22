@@ -13,7 +13,7 @@ async function connectToDB() {
       useUnifiedTopology: true,
       heartbeatFrequencyMS: 3000,
       serverSelectionTimeoutMS: 30000,
-      ssl: true,
+      // ssl: true,
     } as ConnectOptions)
     .then((res) => {
       console.log('Connected to MongoDB');
