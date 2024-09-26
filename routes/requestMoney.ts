@@ -4,78 +4,82 @@ import { NodeMailgun } from 'ts-mailgun';
 
 const mailer = new NodeMailgun();
 require('dotenv').config();
-mailer.apiKey =  process.env.MAILGUN_API_KEY || 'key-yourkeyhere'
+mailer.apiKey = process.env.MAILGUN_API_KEY || '';
 mailer.domain = 'mozartpay.com';
 mailer.options = {
-  host: 'api.eu.mailgun.net'
+  host: process.env.MAILGUN_API_HOST
 };
 mailer.fromEmail = 'admin@mozartpay.com';
 mailer.fromTitle = 'MozartPay';
 mailer.init();
+
 const router = express.Router();
 
 router.post('/', async (req: Request, res: Response) => {
-    res.header("Access-Control-Allow-Origin", '*');
-    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-    res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
-    res.header('Content-Type', 'application/json');
-  
-    const { country, amount, receiverName, receiverEmail, senderEmail } = req.body;
+  res.header("Access-Control-Allow-Origin", '*');
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+  res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
+  res.header('Content-Type', 'application/json');
 
-    try {
-        const newTransaction: IMoneyRequest = new MoneyRequest({
-            senderEmail,
-            country,
-            amount,
-            receiverName,
-            receiverEmail,
-        });
+  const { country, amount, currency, receiverName, receiverEmail, senderEmail } = req.body; // Added currency
 
-        await newTransaction.save();
-         // Send email notification
+  try {
+    const newTransaction: IMoneyRequest = new MoneyRequest({
+      senderEmail,
+      country,
+      amount,
+      currency, // Added currency
+      receiverName,
+      receiverEmail,
+    });
 
+    await newTransaction.save();
+
+    // Generate URLs to view the request in the dashboard (assuming frontend routes)
+    const transactionId = newTransaction._id; // Assuming Mongoose generates `_id`
+    const receiverUrl = `https://www.mozartpay.com/login?redirect=/admin/ ?requestId=${transactionId}`;
+    const senderUrl = `https://www.mozartpay.com/login?redirect=/admin/payment-requests?requestId=${transactionId}`;
+
+    // Send email to receiver
     mailer
-    .send(receiverEmail, 'MozartPay', `New Payment Request has been sent to you account from ${senderEmail} :<br><br>` +
-      `Date: ${new Date().toUTCString()}<br>` +
-      `Amount: ${amount}<br><br>` +
-      "You're receiving this message because of a successful payment request has been sent. If you believe that this payment request is suspicious, please contact us immediately.<br><br>" +
-      "If you're aware of this payment, please disregard this notice.<br><br>" +
-      "Thanks,We will get in touch with you as soon as the payment has been made. <br><br>")
-    .then((result) => console.log('Done', result))
-    .catch((error) => console.error('Error: ', error));
+      .send(receiverEmail, 'You have received a payment request - MozartPay', 
+        `New Payment Request has been sent to your account from ${senderEmail}:<br><br>` +
+        `Date: ${new Date().toUTCString()}<br>` +
+        `Amount: ${amount} ${currency}<br><br>` + // Updated email content to include currency
+        `Click <a href="${receiverUrl}">here</a> to log in and view the payment request details. Once logged in, you will be able to approve the request.<br><br>` +
+        "You're receiving this message because of a successful payment request. If you believe this is suspicious, please contact us immediately.<br><br>" +
+        "If you're aware of this payment, please disregard this notice.<br><br>" +
+        "Thanks, we will notify you when the payment has been processed.<br><br>")
+      .then((result) => console.log('Receiver email sent', result))
+      .catch((error) => console.error('Error sending to receiver: ', error));
 
+    // Send email to sender
     mailer
-    .send(senderEmail, 'MozartPay', `your Payment Request has been sent successfully to ${receiverEmail} :<br><br>` +
-      `Date: ${new Date().toUTCString()}<br>` +
-      `Amount: ${amount}<br><br>` +
-      "You're receiving this message because of a successful payment request has been sent from your account. If you believe that this payment request is suspicious,  please <a href='https://www.mozartpay.com/forgot_password'>Reset Password</a>` immediately.<br><br>" +
-      "If you're aware of this payment, please disregard this notice.<br><br>" +
-      "Thanks,<br><br>")
-    .then((result) => console.log('Done', result))
-    .catch((error) => console.error('Error: ', error));
+      .send(senderEmail, 'You have sent a payment request - MozartPay', 
+        `Your Payment Request has been sent successfully to ${receiverEmail}:<br><br>` +
+        `Date: ${new Date().toUTCString()}<br>` +
+        `Amount: ${amount} ${currency}<br><br>` + // Updated email content to include currency
+        `Click <a href="${senderUrl}">here</a> to log in and view the status of your payment request.<br><br>` +
+        "You're receiving this message because of a successful payment request sent from your account. If you believe this is suspicious, please <a href='https://www.mozartpay.com/forgot_password'>reset your password</a> immediately.<br><br>" +
+        "If you're aware of this payment, please disregard this notice.<br><br>" +
+        "Thanks,<br><br>")
+      .then((result) => console.log('Sender email sent', result))
+      .catch((error) => console.error('Error sending to sender: ', error));
 
-
-
-
-
-        res.status(201).json({ message: 'Transaction data stored successfully.' });
-    } catch (error) {
-        console.error('Error storing transaction data:', error);
-        res.status(500).json({ error: 'An error occurred while storing the data.' });
-    }
+    res.status(201).json({ message: 'Transaction data stored and emails sent successfully.' });
+  } catch (error) {
+    console.error('Error storing transaction data:', error);
+    res.status(500).json({ error: 'An error occurred while storing the data.' });
+  }
 });
-
 
 router.get('/:senderEmail', async (req: Request, res: Response) => {
   try {
     const senderEmail = req.params.senderEmail;
-    
     const transactions: IMoneyRequest[] = await MoneyRequest.find({ senderEmail });
 
     if (!transactions) {
-
       return res.status(404).json({ message: 'No transactions found for the provided senderEmail' });
-      
     }
 
     res.status(200).json(transactions);
@@ -84,6 +88,5 @@ router.get('/:senderEmail', async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 });
-
 
 export default router;

@@ -28,6 +28,7 @@ const transactionRequstSchema = new mongoose_1.Schema({
     senderEmail: String,
     country: String,
     amount: Number,
+    currency: String,
     receiverName: String,
     receiverEmail: String,
     date: { type: Date, default: Date.now },

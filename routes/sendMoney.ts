@@ -1,18 +1,27 @@
 import express, { Request, Response } from 'express';
-import Transaction, { ITransaction } from '../models/Transaction';
+import Transaction, { ITransaction } from '../models/ApiTransaction';
 import { NodeMailgun } from 'ts-mailgun';
 import { User } from '../models/user'; // Import the User model
 import StellarSdk from '@stellar/stellar-sdk';
 import crypto from 'crypto';
+import dotenv from 'dotenv';
+dotenv.config({ path: 'config.env' });
 
 const mailer = new NodeMailgun();
-mailer.apiKey = process.env.MAILGUN_API_KEY || 'key-yourkeyhere';
+mailer.apiKey = process.env.MAILGUN_API_KEY as string;
 mailer.domain = 'mozartpay.com';
 mailer.options = {
-    host: 'api.eu.mailgun.net',
+    host: process.env.MAILGUN_API_HOST,
 };
 mailer.fromEmail = 'admin@mozartpay.com';
 mailer.fromTitle = 'MozartPay';
+
+// Check if the API key is valid
+if (!mailer.apiKey) {
+    console.error('Error: MAILGUN_API_KEY is not set or invalid.');
+    process.exit(1); // Exit the process with an error code
+}
+
 mailer.init();
 
 const router = express.Router();
@@ -112,7 +121,7 @@ router.post('/', async (req: Request, res: Response) => {
 
         // Send email notification to receiver
         mailer
-            .send(receiverEmail, 'MozartPay', `New Payment Transaction has been sent to your account from ${senderEmail} :<br><br>` +
+            .send(receiverEmail, 'You have received a payment - MozartPay', `New Payment Transaction has been sent to your account from ${senderEmail} :<br><br>` +
                 `Date: ${new Date().toUTCString()}<br>` +
                 `Amount: ${amount}<br><br>` +
                 "You're receiving this message because a successful payment request has been sent. If you believe that this payment request is suspicious, please contact us immediately.<br><br>" +
@@ -123,7 +132,7 @@ router.post('/', async (req: Request, res: Response) => {
 
         // Send email notification to sender
         mailer
-            .send(senderEmail, 'MozartPay', `Your Payment Transaction has been sent successfully to ${receiverEmail} :<br><br>` +
+            .send(senderEmail, 'You have sent a payment - MozartPay', `Your Payment Transaction has been sent successfully to ${receiverEmail} :<br><br>` +
                 `Date: ${new Date().toUTCString()}<br>` +
                 `Amount: ${amount}<br><br>` +
                 "You're receiving this message because a successful payment transaction has been sent from your account. If you believe that this payment request is suspicious, please <a href='https://www.mozartpay.com/forgot_password'>Reset Password</a> immediately.<br><br>" +
