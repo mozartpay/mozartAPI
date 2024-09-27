@@ -6,6 +6,7 @@ import cors from 'cors';
 import { NodeMailgun } from 'ts-mailgun';
 
 import * as dotenv from 'dotenv';
+
 dotenv.config({ path: 'config.env' });
 
 const router = express.Router();
@@ -37,6 +38,10 @@ mailer.options = {
 mailer.fromEmail = 'admin@mozartpay.com';
 mailer.fromTitle = 'MozartPay';
 mailer.init();
+
+console.log('Mailgun API Key:', process.env.MAILGUN_API_KEY);
+console.log('Mailgun Domain:', process.env.MAILGUN_DOMAIN);
+console.log('Mailgun API Host:', process.env.MAILGUN_API_HOST);
 
 
 router.post('/', async (req: Request, res: Response) => {

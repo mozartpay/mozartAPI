@@ -71,6 +71,9 @@ mailer.options = {
 mailer.fromEmail = 'admin@mozartpay.com';
 mailer.fromTitle = 'MozartPay';
 mailer.init();
+console.log('Mailgun API Key:', process.env.MAILGUN_API_KEY);
+console.log('Mailgun Domain:', process.env.MAILGUN_DOMAIN);
+console.log('Mailgun API Host:', process.env.MAILGUN_API_HOST);
 router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     console.log("request");
     try {
