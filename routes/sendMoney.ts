@@ -8,7 +8,7 @@ import dotenv from 'dotenv';
 dotenv.config({ path: 'config.env' });
 
 const mailer = new NodeMailgun();
-mailer.apiKey = process.env.MAILGUN_API_KEY as string;
+mailer.apiKey = 'key-c8d12b7428fbe666e074108aaa0820bc' as string;
 mailer.domain = 'mozartpay.com';
 mailer.options = {
     host: process.env.MAILGUN_API_HOST,

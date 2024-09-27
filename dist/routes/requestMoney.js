@@ -41,7 +41,7 @@ const ts_mailgun_1 = require("ts-mailgun");
 const dotenv = __importStar(require("dotenv"));
 const mailer = new ts_mailgun_1.NodeMailgun();
 dotenv.config({ path: 'config.env' });
-mailer.apiKey = process.env.MAILGUN_API_KEY || '';
+mailer.apiKey = 'key-c8d12b7428fbe666e074108aaa0820bc';
 mailer.domain = process.env.MAILGUN_DOMAIN || 'mozartpay.com';
 mailer.options = {
     host: process.env.MAILGUN_API_HOST
