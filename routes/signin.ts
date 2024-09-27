@@ -28,13 +28,9 @@ app.use(cors({
   optionsSuccessStatus: 200
 }));
 
-console.log('Mailgun API Key:', process.env.MAILGUN_API_KEY);
-console.log('Mailgun Domain:', process.env.MAILGUN_DOMAIN);
-console.log('Mailgun API Host:', process.env.MAILGUN_API_HOST);
-
 // Initialize Mailgun with API key and domain from environment variables
 const mailer = new NodeMailgun();
-mailer.apiKey = 'key-c8d12b7428fbe666e074108aaa0820bc' || ''; // Ensure this is set in your environment variables
+mailer.apiKey = process.env.MAILGUN_API_KEY || ''; // Ensure this is set in your environment variables
 mailer.domain = process.env.MAILGUN_DOMAIN || 'mozartpay.com';
 mailer.options = {
   host: process.env.MAILGUN_API_HOST
