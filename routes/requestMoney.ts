@@ -1,11 +1,12 @@
 import express, { Request, Response } from 'express';
 import MoneyRequest, { IMoneyRequest } from '../models/MoneyRequest';
 import { NodeMailgun } from 'ts-mailgun';
+import * as dotenv from 'dotenv';
 
 const mailer = new NodeMailgun();
-require('dotenv').config();
+dotenv.config({ path: 'config.env' });
 mailer.apiKey = process.env.MAILGUN_API_KEY || '';
-mailer.domain = 'mozartpay.com';
+mailer.domain = process.env.MAILGUN_DOMAIN || 'mozartpay.com';
 mailer.options = {
   host: process.env.MAILGUN_API_HOST
 };

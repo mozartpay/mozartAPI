@@ -1,4 +1,27 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -18,6 +41,8 @@ const user_1 = require("../models/user");
 const crypto_1 = __importDefault(require("crypto"));
 const cors_1 = __importDefault(require("cors"));
 const ts_mailgun_1 = require("ts-mailgun");
+const dotenv = __importStar(require("dotenv"));
+dotenv.config({ path: 'config.env' });
 const router = express_1.default.Router();
 const app = (0, express_1.default)();
 // Set up CORS middleware globally
@@ -38,10 +63,10 @@ app.use((0, cors_1.default)({
 }));
 // Initialize Mailgun with API key and domain from environment variables
 const mailer = new ts_mailgun_1.NodeMailgun();
-mailer.apiKey = 'key-c8d12b7428fbe666e074108aaa0820bc' || 'key-yourkeyhere'; // Ensure this is set in your environment variables
+mailer.apiKey = process.env.MAILGUN_API_KEY || ''; // Ensure this is set in your environment variables
 mailer.domain = process.env.MAILGUN_DOMAIN || 'mozartpay.com';
 mailer.options = {
-    host: 'api.eu.mailgun.net'
+    host: process.env.MAILGUN_API_HOST
 };
 mailer.fromEmail = 'admin@mozartpay.com';
 mailer.fromTitle = 'MozartPay';
