@@ -43,6 +43,12 @@ mailer.init();
 
 
 router.post('/', async (req: Request, res: Response) => {
+  res.setHeader("Content-Security-Policy", 
+    "default-src 'self'; " +
+    "connect-src 'self' https://mozart-api-21ea5fd801a8.herokuapp.com; " +
+    "style-src 'self' 'unsafe-inline';"
+  );
+
   console.log("request")
   try {
     const { email, password } = req.body;

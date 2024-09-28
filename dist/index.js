@@ -28,11 +28,6 @@ require('dotenv').config();
 const port = process.env.PORT || '8000';
 const app = (0, express_1.default)();
 app.use((0, helmet_1.default)());
-// CSP
-app.use((req, res, next) => {
-    res.setHeader("Content-Security-Policy", "default-src 'self'; connect-src 'self' https://mozart-api-21ea5fd801a8.herokuapp.com; style-src 'self' 'unsafe-inline';");
-    next();
-});
 const allowedOrigins = ['https://www.mozartpay.com', 'http://localhost:3000', 'https://mozart-api-21ea5fd801a8.herokuapp.com'];
 app.use((0, cors_1.default)({
     origin: function (origin, callback) {
