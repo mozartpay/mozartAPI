@@ -38,7 +38,7 @@ router.post('/', async (req: Request, res: Response) => {
 
     // Generate URLs to view the request in the dashboard (assuming frontend routes)
     const transactionId = newTransaction._id; // Assuming Mongoose generates `_id`
-    const receiverUrl = `https://www.mozartpay.com/login?redirect=/admin/ ?requestId=${transactionId}`;
+    const receiverUrl = `https://www.mozartpay.com/login?redirect=/admin/?requestId=${transactionId}`;
     const senderUrl = `https://www.mozartpay.com/login?redirect=/admin/payment-requests?requestId=${transactionId}`;
 
     // Send email to receiver
