@@ -4,6 +4,7 @@ import { User } from '../models/user';
 import crypto from 'crypto';
 import cors from 'cors';
 import { NodeMailgun } from 'ts-mailgun';
+import jwt from 'jsonwebtoken';
 
 import * as dotenv from 'dotenv';
 
@@ -40,8 +41,6 @@ mailer.fromTitle = 'MozartPay';
 mailer.init();
 
 
-
-
 router.post('/', async (req: Request, res: Response) => {
   res.setHeader("Content-Security-Policy", 
     "default-src 'self'; " +
@@ -57,6 +56,13 @@ router.post('/', async (req: Request, res: Response) => {
 
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) return res.status(401).json({ message: 'Incorrect password.' });
+
+    // Generate JWT
+    const token = jwt.sign(
+      { id: user._id, email: user.email },
+      process.env.JWT_SECRET as string,
+      { expiresIn: '1h' }
+    );
 
     // Send email notification after successful login
     mailer.send(email, 'MozartPay - Sign-in Verification', `
@@ -83,6 +89,7 @@ router.post('/', async (req: Request, res: Response) => {
 
     return res.status(200).json({
       message: 'Login successful!',
+      token, // Return the JWT token
       user: { email: user.email, name: user.name, balance: user.balance },
     });
   } catch (error) {

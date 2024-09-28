@@ -41,6 +41,7 @@ const user_1 = require("../models/user");
 const crypto_1 = __importDefault(require("crypto"));
 const cors_1 = __importDefault(require("cors"));
 const ts_mailgun_1 = require("ts-mailgun");
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const dotenv = __importStar(require("dotenv"));
 dotenv.config({ path: 'config.env' });
 const router = express_1.default.Router();
@@ -84,6 +85,8 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const passwordMatch = yield bcrypt_1.default.compare(password, user.password);
         if (!passwordMatch)
             return res.status(401).json({ message: 'Incorrect password.' });
+        // Generate JWT
+        const token = jsonwebtoken_1.default.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
         // Send email notification after successful login
         mailer.send(email, 'MozartPay - Sign-in Verification', `
   <h2>Sign-in Verification for MozartPay</h2>
@@ -108,6 +111,7 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             .catch(error => console.error('Error sending email: ', error));
         return res.status(200).json({
             message: 'Login successful!',
+            token,
             user: { email: user.email, name: user.name, balance: user.balance },
         });
     }
