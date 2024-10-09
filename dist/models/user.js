@@ -18,12 +18,14 @@ const userSchema = new mongoose_1.default.Schema({
     balanceEur: { type: String },
     balanceCop: { type: String },
     balanceBtc: { type: String },
+    balanceEth: { type: String },
     balanceXlm: { type: String },
     resetToken: { type: String },
     resetTokenExpiration: { type: Date },
     token: String,
     number: String,
     verificationCode: String,
+    preferredCurrency: { type: String, default: 'USD' },
     createdAt: { type: Date, default: Date.now }
 });
 exports.User = mongoose_1.default.model('User', userSchema);

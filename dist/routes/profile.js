@@ -57,4 +57,23 @@ router.post('/image', (req, res) => __awaiter(void 0, void 0, void 0, function* 
         return res.status(500).json({ message: 'User image update failed' });
     }
 }));
+// New route to update user's preferred currency
+router.post('/preferredCurrency', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { email, preferredCurrency } = req.body;
+        if (!email || !preferredCurrency) {
+            return res.status(400).json({ message: 'Email and preferred currency are required' });
+        }
+        const user = yield user_1.User.findOneAndUpdate({ email }, { preferredCurrency }, { new: true });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        console.log('User preferred currency updated:', user.preferredCurrency);
+        return res.status(200).json({ message: 'Preferred currency updated successfully', preferredCurrency: user.preferredCurrency });
+    }
+    catch (error) {
+        console.error('Error updating user preferred currency:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+}));
 exports.default = router;
