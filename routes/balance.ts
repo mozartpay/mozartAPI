@@ -1,4 +1,5 @@
 import express, { Request, Response } from 'express';
+import cors from 'cors';
 import StellarSdk from '@stellar/stellar-sdk';
 import { User } from '../models/user'; // Import User model
 import crypto from 'crypto';
@@ -8,6 +9,14 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const router = express.Router();
+
+// Add CORS middleware
+router.use(cors({
+  origin: 'https://mozartpay.com',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 const server = new StellarSdk.Horizon.Server('https://horizon-testnet.stellar.org'); // Stellar testnet URL
 
 // Define the decryptPrivateKey function
