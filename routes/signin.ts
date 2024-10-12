@@ -1,4 +1,4 @@
-import express, { Express, Request, Response } from "express";
+import express, { Express, Request, Response, NextFunction } from "express";
 import bcrypt from 'bcrypt';
 import { User } from '../models/user';
 import crypto from 'crypto';
@@ -40,8 +40,27 @@ mailer.fromEmail = 'admin@mozartpay.com';
 mailer.fromTitle = 'MozartPay';
 mailer.init();
 
+// Middleware to verify JWT token
+function verifyToken(req: CustomRequest, res: Response, next: NextFunction) {
+  const token = req.header('Authorization')?.replace('Bearer ', '');
+  if (!token) {
+    return res.status(401).json({ message: 'Access denied. No token provided.' });
+  }
 
-router.post('/', async (req: Request, res: Response) => {
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+    req.user = decoded; // Now TypeScript won't complain about this
+    next();
+  } catch (error) {
+    res.status(400).json({ message: 'Invalid token.' });
+  }
+}
+
+interface CustomRequest extends Request {
+  user?: any;
+}
+
+router.post('/', verifyToken, async (req: CustomRequest, res: Response) => {
   res.setHeader("Content-Security-Policy", 
     "default-src 'self'; " +
     "connect-src 'self' https://mozart-api-21ea5fd801a8.herokuapp.com; " +

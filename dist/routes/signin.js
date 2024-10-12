@@ -72,7 +72,23 @@ mailer.options = {
 mailer.fromEmail = 'admin@mozartpay.com';
 mailer.fromTitle = 'MozartPay';
 mailer.init();
-router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+// Middleware to verify JWT token
+function verifyToken(req, res, next) {
+    var _a;
+    const token = (_a = req.header('Authorization')) === null || _a === void 0 ? void 0 : _a.replace('Bearer ', '');
+    if (!token) {
+        return res.status(401).json({ message: 'Access denied. No token provided.' });
+    }
+    try {
+        const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
+        req.user = decoded; // Now TypeScript won't complain about this
+        next();
+    }
+    catch (error) {
+        res.status(400).json({ message: 'Invalid token.' });
+    }
+}
+router.post('/', verifyToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     res.setHeader("Content-Security-Policy", "default-src 'self'; " +
         "connect-src 'self' https://mozart-api-21ea5fd801a8.herokuapp.com; " +
         "style-src 'self' 'unsafe-inline';");
