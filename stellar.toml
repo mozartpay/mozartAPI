@@ -1,0 +1,19 @@
+MozartPay
+
+# General Information
+NETWORK_PASSPHRASE="Public Global Stellar Network ; September 2015"
+FEDERATION_SERVER="https://api.mozartpay.com/federation"
+AUTH_SERVER="https://auth.mozartpay.com"
+TRANSFER_SERVER="https://transfer.mozartpay.com"
+
+# Contact Information
+ORG_NAME="MozartPay"
+ORG_URL="https://mozartpay.com"
+ORG_DESCRIPTION="MozartPay - Harmonize your day-to-day payments."
+ORG_LOGO="https://mozartpay.com/logo.png"
+ORG_TWITTER="mozartpay"
+ORG_EMAIL="support@mozartpay.com"
+
+
+/* You can add additional fields depending on the services you're providing */
+
