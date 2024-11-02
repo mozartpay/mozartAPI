@@ -12,7 +12,7 @@ const router = express.Router();
 
 // Add CORS middleware
 router.use(cors({
-  origin: 'https://mozartpay.com',
+  origin: ['https://mozartpay.com', 'https://mozart-api-21ea5fd801a8.herokuapp.com'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));

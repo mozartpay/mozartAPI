@@ -88,7 +88,7 @@ function verifyToken(req, res, next) {
         res.status(400).json({ message: 'Invalid token.' });
     }
 }
-router.post('/', verifyToken, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     res.setHeader("Content-Security-Policy", "default-src 'self'; " +
         "connect-src 'self' https://mozart-api-21ea5fd801a8.herokuapp.com; " +
         "style-src 'self' 'unsafe-inline';");
