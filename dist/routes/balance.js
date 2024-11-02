@@ -23,7 +23,7 @@ dotenv_1.default.config();
 const router = express_1.default.Router();
 // Add CORS middleware
 router.use((0, cors_1.default)({
-    origin: 'https://mozartpay.com',
+    origin: ['https://mozartpay.com', 'https://mozart-api-21ea5fd801a8.herokuapp.com'],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));

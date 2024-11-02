@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const db_1 = __importDefault(require("./db"));
+const oas_1 = __importDefault(require("./routes/oas"));
 const sep0001_1 = __importDefault(require("./routes/SEPs/sep0001"));
 const sep0002_1 = __importDefault(require("./routes/SEPs/sep0002"));
 const body_parser_1 = __importDefault(require("body-parser"));
@@ -61,7 +62,7 @@ if (process.env.NODE_ENV === 'production') {
 (0, db_1.default)();
 (0, sep0001_1.default)();
 // Default route
-app.get("/", (res) => {
+app.get("/", (req, res) => {
     res.send("Hello, Mozart Typescript Node.js server!");
 });
 // Define API routes
@@ -80,6 +81,7 @@ app.use('/api/balance', balance_1.default);
 app.use('/api/xlm', xlm_1.default);
 app.use('/api/federation', sep0002_1.default);
 app.use('/api/notifications', notification_1.default);
+app.use('/api/oas', oas_1.default);
 // Start the server
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
