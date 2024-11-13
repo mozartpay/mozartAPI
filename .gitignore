@@ -2,7 +2,6 @@ dist/
 node_modules/
 node_modules
 .env
-.env.production
 .env.keys
 config.env
 .DS_Store
