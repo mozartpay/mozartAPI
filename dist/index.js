@@ -53,17 +53,13 @@ const enforceHTTPS = (req, res, next) => {
     }
     next();
 };
-// Use in production only
-if (process.env.NODE_ENV === 'development') {
-    require('dotenv').config({ path: '.env.production' });
-    console.log("Not Running enforceHTTPS");
-    console.log(process.env.NODE_ENV);
-    // app.use(enforceHTTPS);
-}
 // Then use the environment check
 if (process.env.NODE_ENV === 'production') {
     app.use(enforceHTTPS);
     console.log("Running enforceHTTPS");
+}
+else {
+    console.log("Not Running enforceHTTPS - Development Mode");
 }
 // Connect to database
 (0, db_1.default)();
