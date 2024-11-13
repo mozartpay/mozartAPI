@@ -1,1 +1,1 @@
-web: dotenvx run -- node index.js
+web: dotenvx run -- node dist/index.js
