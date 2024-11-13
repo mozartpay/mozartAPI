@@ -17,8 +17,6 @@ router.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-const server = new StellarSdk.Horizon.Server('https://horizon-testnet.stellar.org'); // Stellar testnet URL
-
 // Define the decryptPrivateKey function
 const decryptPrivateKey = (encryptedPrivateKey: string): string => {
   const encryptionKey = process.env.ENCRYPTION_SECRET_KEY as string;
@@ -49,10 +47,26 @@ interface Balance {
   balance: string;        // Balance amount as string
 }
 
+// Remove the static server initialization and create a function to get the appropriate server
+const getServer = (network: string = 'testnet'): StellarSdk.Horizon.Server => {
+  const url = network === 'mainnet' 
+    ? process.env.STELLAR_MAINNET_URL 
+    : process.env.STELLAR_TESTNET_URL;
+  return new StellarSdk.Horizon.Server(url as string);
+};
+
 // Route to fetch and return balances
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const { email } = req.query; // Retrieve email from query string
+    const { email, network } = req.query; // Add network to query parameters
+    
+    // Validate network parameter
+    if (network && !['mainnet', 'testnet'].includes(network as string)) {
+      return res.status(400).json({ error: 'Invalid network parameter. Use "mainnet" or "testnet"' });
+    }
+
+    // Get the appropriate server instance
+    const server = getServer(network as string);
 
     // Fetch the user from the database
     const user = await User.findOne({ email });

@@ -79,4 +79,34 @@ router.post('/preferredCurrency', async (req: Request, res: Response) => {
   }
 });
 
+// Route to update user's preferred network
+router.post('/preferredNetwork', async (req: Request, res: Response) => {
+  try {
+    const { email, preferredNetwork } = req.body;
+
+    if (!email || !preferredNetwork) {
+      return res.status(400).json({ message: 'Email and preferred network are required' });
+    }
+
+    const user = await User.findOneAndUpdate(
+      { email },
+      { preferredNetwork },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    console.log('User preferred network updated:', user.preferredNetwork);
+    return res.status(200).json({ 
+      message: 'Preferred network updated successfully', 
+      preferredNetwork: user.preferredNetwork 
+    });
+  } catch (error) {
+    console.error('Error updating user preferred network:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 export default router;

@@ -8,8 +8,14 @@ import dotenv from 'dotenv';
 dotenv.config({ path: '.env.production' });
 
 const router = express.Router();
-const server = new StellarSdk.Horizon.Server('https://horizon-testnet.stellar.org'); // Stellar testnet URL
 
+// Replace the static server initialization with a function
+const getServer = (network: string = 'testnet'): StellarSdk.Horizon.Server => {
+    const url = network === 'mainnet' 
+        ? process.env.STELLAR_MAINNET_URL 
+        : process.env.STELLAR_TESTNET_URL;
+    return new StellarSdk.Horizon.Server(url as string);
+};
 
 const decryptPrivateKey = (encryptedPrivateKey: string): string => {
   const encryptionKey = process.env.ENCRYPTION_SECRET_KEY as string;
@@ -49,13 +55,18 @@ const decryptPrivateKey = (encryptedPrivateKey: string): string => {
   }
 };
 
-
-
-
 // Withdraw route
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const { email, amount, xlmAddress } = req.body;
+    const { email, amount, xlmAddress, network = 'testnet' } = req.body;
+
+    // Add network validation
+    if (network && !['mainnet', 'testnet'].includes(network)) {
+      return res.status(400).json({ error: 'Invalid network parameter. Use "mainnet" or "testnet"' });
+    }
+
+    // Get the appropriate server instance
+    const server = getServer(network);
 
     // Log the incoming request data
     console.log('Received withdrawal request:', { email, amount, xlmAddress });
@@ -104,13 +115,13 @@ router.post('/', async (req: Request, res: Response) => {
     console.log('Building transaction to send XLM:', { destination: xlmAddress, amount: formattedAmount });
     const transaction = new StellarSdk.TransactionBuilder(account, {
       fee: StellarSdk.BASE_FEE,
-      networkPassphrase: StellarSdk.Networks.TESTNET, // Change to `StellarSdk.Networks.PUBLIC` for mainnet
+      networkPassphrase: network === 'mainnet' ? StellarSdk.Networks.PUBLIC : StellarSdk.Networks.TESTNET,
     })
       .addOperation(
         StellarSdk.Operation.payment({
           destination: xlmAddress,
-          asset: StellarSdk.Asset.native(), // XLM is the native asset
-          amount: formattedAmount, // The amount to withdraw
+          asset: StellarSdk.Asset.native(),
+          amount: formattedAmount,
         })
       )
       .setTimeout(30)

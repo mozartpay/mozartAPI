@@ -5,10 +5,17 @@ import crypto from 'crypto';
 import dotenv from 'dotenv';
 
 // Load environment variables
-dotenv.config();
+dotenv.config({ path: '.env.production' });
 
 const router = express.Router();
-const server = new StellarSdk.Horizon.Server('https://horizon-testnet.stellar.org'); // Stellar testnet URL
+
+// Replace the static server initialization with a function
+const getServer = (network: string = 'testnet'): StellarSdk.Horizon.Server => {
+    const url = network === 'mainnet' 
+        ? process.env.STELLAR_MAINNET_URL 
+        : process.env.STELLAR_TESTNET_URL;
+    return new StellarSdk.Horizon.Server(url as string);
+};
 
 // Decrypt function (same as the one in your previous code)
 const decryptPrivateKey = (encryptedPrivateKey: string): string => {
@@ -43,7 +50,15 @@ interface Balance {
 // Route to establish trustlines with USDC and EURC
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const { email } = req.body;
+    const { email, network = 'testnet' } = req.body;
+
+    // Add network validation
+    if (network && !['mainnet', 'testnet'].includes(network)) {
+      return res.status(400).json({ error: 'Invalid network parameter. Use "mainnet" or "testnet"' });
+    }
+
+    // Get the appropriate server instance
+    const server = getServer(network);
 
     // Fetch the user from the database
     const user = await User.findOne({ email });
@@ -112,7 +127,7 @@ router.post('/', async (req: Request, res: Response) => {
     // If any trustlines are missing, create a transaction to add them
     let transactionBuilder = new StellarSdk.TransactionBuilder(account, {
       fee: StellarSdk.BASE_FEE,
-      networkPassphrase: StellarSdk.Networks.TESTNET,
+      networkPassphrase: network === 'mainnet' ? StellarSdk.Networks.PUBLIC : StellarSdk.Networks.TESTNET,
     });
 
     // Add each operation individually

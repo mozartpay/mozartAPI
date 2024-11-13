@@ -24,6 +24,15 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
         const { email, password, fullname, number } = req.body;
+        // Add phone number validation
+        if (!number) {
+            return res.status(400).json({ message: 'Phone number is required.' });
+        }
+        // Basic phone number format validation (you might want to adjust this regex based on your needs)
+        const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+        if (!phoneRegex.test(number)) {
+            return res.status(400).json({ message: 'Invalid phone number format. Please use international format (e.g., +1234567890).' });
+        }
         // Check if the email is already registered
         const existingUser = yield user_1.User.findOne({ email });
         if (existingUser) {

@@ -21,6 +21,7 @@ interface UserDoc extends mongoose.Document {
   number:string;
   verificationCode:string;
   preferredCurrency:string;
+  preferredNetwork: string;
   createdAt: Date;
 }
 
@@ -44,7 +45,8 @@ const userSchema = new mongoose.Schema<UserDoc>({
   token: String,
   number: String,
   verificationCode: String,
-  preferredCurrency: { type: String, default: 'USD' }, // Add this line
+  preferredCurrency: { type: String, default: 'USD' },
+  preferredNetwork: { type: String, default: 'XLM' },
   createdAt: { type: Date, default: Date.now }
 });
 

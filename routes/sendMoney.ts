@@ -27,7 +27,14 @@ mailer.init();
 
 const router = express.Router();
 
-const server = new StellarSdk.Horizon.Server('https://horizon-testnet.stellar.org'); // Use testnet for now
+// Replace the static server initialization with a function
+const getServer = (network: string = 'testnet'): StellarSdk.Horizon.Server => {
+    const url = network === 'mainnet' 
+        ? process.env.STELLAR_MAINNET_URL 
+        : process.env.STELLAR_TESTNET_URL;
+    return new StellarSdk.Horizon.Server(url as string);
+};
+
 const { TransactionBuilder, Networks, BASE_FEE, Operation, Keypair } = StellarSdk;
 const encryptionKey = process.env.ENCRYPTION_SECRET_KEY as string; // Ensure this is available in your .env file
 
@@ -43,33 +50,28 @@ const decryptPrivateKey = (encryptedPrivateKey: string): string => {
     return decrypted.toString('utf8');
 };
 
-// Helper function to sign and send a transaction using Stellar SDK
-const sendStellarTransaction = async (senderPrivateKey: string, receiverPublicKey: string, amount: number | string) => {
+// Update the sendStellarTransaction helper function
+const sendStellarTransaction = async (senderPrivateKey: string, receiverPublicKey: string, amount: number | string, network: string = 'testnet') => {
     try {
-        // Load the funding account (sender)
+        const server = getServer(network);
         const senderKeypair = Keypair.fromSecret(senderPrivateKey);
         const senderAccount = await server.loadAccount(senderKeypair.publicKey());
 
-        // Ensure amount is a valid number and formatted correctly
-        const formattedAmount = parseFloat(amount as string).toFixed(7).toString(); // Convert to number first, then format
+        const formattedAmount = parseFloat(amount as string).toFixed(7).toString();
 
-        // Build the transaction
         const transaction = new TransactionBuilder(senderAccount, {
             fee: BASE_FEE,
-            networkPassphrase: Networks.TESTNET,
+            networkPassphrase: network === 'mainnet' ? Networks.PUBLIC : Networks.TESTNET,
         })
             .addOperation(Operation.payment({
                 destination: receiverPublicKey,
                 asset: StellarSdk.Asset.native(),
-                amount: formattedAmount, // Correctly formatted string amount
+                amount: formattedAmount,
             }))
             .setTimeout(30)
             .build();
 
-        // Sign the transaction with the sender's private key
         transaction.sign(senderKeypair);
-
-        // Submit the transaction to the Stellar network
         const transactionResult = await server.submitTransaction(transaction);
         return transactionResult;
     } catch (error: any) {
@@ -84,7 +86,12 @@ router.post('/', async (req: Request, res: Response) => {
     res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
     res.header('Content-Type', 'application/json');
 
-    const { country, amount, receiverName, receiverEmail, senderEmail } = req.body;
+    const { country, amount, receiverName, receiverEmail, senderEmail, network = 'testnet' } = req.body;
+
+    // Add network validation
+    if (network && !['mainnet', 'testnet'].includes(network)) {
+        return res.status(400).json({ error: 'Invalid network parameter. Use "mainnet" or "testnet"' });
+    }
 
     try {
         // Check if the receiver has a MozartPay account
@@ -115,8 +122,13 @@ router.post('/', async (req: Request, res: Response) => {
         }
         const decryptedPrivateKey = decryptPrivateKey(sender.privateKeyXlm);
 
-        // Sign and send the Stellar transaction
-        const transactionResult = await sendStellarTransaction(decryptedPrivateKey, receiver.publicKeyXlm, amount);
+        // Update the transaction call to include network
+        const transactionResult = await sendStellarTransaction(
+            decryptedPrivateKey, 
+            receiver.publicKeyXlm, 
+            amount,
+            network
+        );
 
         console.log('Stellar transaction successful:', transactionResult);
 

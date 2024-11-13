@@ -32,7 +32,13 @@ if (encryptionKey.length !== 64) { // Expecting a hex-encoded 32-byte key
     throw new Error('ENCRYPTION_SECRET_KEY must be a 64-character hex string representing a 32-byte key');
 }
 const fundingKeypair = Keypair.fromSecret(fundingSecretKey);
-const server = new stellar_sdk_1.default.Horizon.Server('https://horizon-testnet.stellar.org');
+// Replace the static server initialization with a function
+const getServer = (network = 'testnet') => {
+    const url = network === 'mainnet'
+        ? process.env.STELLAR_MAINNET_URL
+        : process.env.STELLAR_TESTNET_URL;
+    return new stellar_sdk_1.default.Horizon.Server(url);
+};
 // Encryption function using AES-256 with a hex-encoded key
 const encryptPrivateKey = (privateKey) => {
     const iv = crypto_1.default.randomBytes(16); // Initialization vector (IV) should be 16 bytes
@@ -51,12 +57,13 @@ const decryptPrivateKey = (encryptedPrivateKey) => {
     let decrypted = Buffer.concat([decipher.update(encryptedText), decipher.final()]);
     return decrypted.toString('utf8');
 };
-// Helper function to wait for the account to be available on the network
-const waitForAccount = (publicKey, retries = 10, delay = 5000) => __awaiter(void 0, void 0, void 0, function* () {
+// Update waitForAccount helper to accept network parameter
+const waitForAccount = (publicKey, network = 'testnet', retries = 10, delay = 5000) => __awaiter(void 0, void 0, void 0, function* () {
+    const server = getServer(network);
     for (let i = 0; i < retries; i++) {
         try {
             const account = yield server.loadAccount(publicKey);
-            return account; // Return the account if successfully loaded
+            return account;
         }
         catch (error) {
             console.log(`Attempt ${i + 1} failed. Retrying in ${delay / 1000} seconds...`);
@@ -92,7 +99,13 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
     console.log('Received request');
     try {
-        const { email, currency } = req.body;
+        const { email, currency, network = 'testnet' } = req.body;
+        // Add network validation
+        if (network && !['mainnet', 'testnet'].includes(network)) {
+            return res.status(400).json({ error: 'Invalid network parameter. Use "mainnet" or "testnet"' });
+        }
+        // Get the appropriate server instance
+        const server = getServer(network);
         // Ensure that this feature is only available for XLM
         if (currency !== 'XLM') {
             return res.status(400).json({ error: 'This feature is only available for XLM' });
@@ -104,40 +117,32 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         }
         if (existingUser.publicKeyXlm) {
             console.log('User already has a Stellar account');
-            // Load the user's Stellar account to get the balance
-            const account = yield waitForAccount(existingUser.publicKeyXlm);
+            const account = yield waitForAccount(existingUser.publicKeyXlm, network);
             const balance = ((_a = account.balances.find((b) => b.asset_type === 'native')) === null || _a === void 0 ? void 0 : _a.balance) || '0';
-            // Return the existing public key and balance to the frontend
             return res.json({
                 publicKey: existingUser.publicKeyXlm,
                 balance: balance,
             });
         }
-        // If the user doesn't have a Stellar account, create a new one
+        // Create new account with appropriate network
         console.log('Creating a new Stellar account for the user');
-        const pair = Keypair.random(); // Generate a new Stellar keypair
-        // Load the funding account
+        const pair = Keypair.random();
         const sourceAccount = yield server.loadAccount(fundingPublicKey);
-        // Create a transaction to create a new account with 10 XLM
         const transaction = new TransactionBuilder(sourceAccount, {
             fee: BASE_FEE,
-            networkPassphrase: Networks.TESTNET,
+            networkPassphrase: network === 'mainnet' ? Networks.PUBLIC : Networks.TESTNET,
         })
             .addOperation(Operation.createAccount({
             destination: pair.publicKey(),
-            startingBalance: '10', // Send 10 XLM to the new account to create it
+            startingBalance: '10',
         }))
             .setTimeout(30)
             .build();
-        // Sign the transaction with the funding account's secret key
         transaction.sign(fundingKeypair);
-        // Submit the transaction to the Stellar network
         const transactionResult = yield server.submitTransaction(transaction);
         console.log('Transaction successful:', transactionResult);
-        // Wait 5 seconds before trying to fetch the new account
         yield new Promise(res => setTimeout(res, 5000));
-        // Wait for the new account to be available on the network
-        const account = yield waitForAccount(pair.publicKey());
+        const account = yield waitForAccount(pair.publicKey(), network);
         // Encrypt the private key
         const encryptedPrivateKey = encryptPrivateKey(pair.secret());
         // Update the user's record with the new Stellar keypair and balance in MongoDB

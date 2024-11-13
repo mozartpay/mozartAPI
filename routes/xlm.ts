@@ -25,7 +25,14 @@ if (encryptionKey.length !== 64) { // Expecting a hex-encoded 32-byte key
 }
 
 const fundingKeypair = Keypair.fromSecret(fundingSecretKey);
-const server = new StellarSdk.Horizon.Server('https://horizon-testnet.stellar.org');
+
+// Replace the static server initialization with a function
+const getServer = (network: string = 'testnet'): StellarSdk.Horizon.Server => {
+    const url = network === 'mainnet' 
+        ? process.env.STELLAR_MAINNET_URL 
+        : process.env.STELLAR_TESTNET_URL;
+    return new StellarSdk.Horizon.Server(url as string);
+};
 
 // Encryption function using AES-256 with a hex-encoded key
 const encryptPrivateKey = (privateKey: string) => {
@@ -51,12 +58,13 @@ const decryptPrivateKey = (encryptedPrivateKey: string): string => {
     return decrypted.toString('utf8');
 };
 
-// Helper function to wait for the account to be available on the network
-const waitForAccount = async (publicKey: string, retries = 10, delay = 5000) => {
+// Update waitForAccount helper to accept network parameter
+const waitForAccount = async (publicKey: string, network: string = 'testnet', retries = 10, delay = 5000) => {
+    const server = getServer(network);
     for (let i = 0; i < retries; i++) {
         try {
             const account = await server.loadAccount(publicKey);
-            return account; // Return the account if successfully loaded
+            return account;
         } catch (error) {
             console.log(`Attempt ${i + 1} failed. Retrying in ${delay / 1000} seconds...`);
             await new Promise(res => setTimeout(res, delay));
@@ -96,95 +104,89 @@ router.post('/decrypt', async (req: Request, res: Response) => {
 router.post('/', async (req: Request, res: Response) => {
     console.log('Received request');
     try {
-      const { email, currency } = req.body;
-  
-      // Ensure that this feature is only available for XLM
-      if (currency !== 'XLM') {
-        return res.status(400).json({ error: 'This feature is only available for XLM' });
-      }
-  
-      // Check if the user already has a publicKeyXlm
-      const existingUser = await User.findOne({ email });
-  
-      if (!existingUser) {
-        return res.status(404).json({ error: 'User not found' });
-      }
-  
-      if (existingUser.publicKeyXlm) {
-        console.log('User already has a Stellar account');
-  
-        // Load the user's Stellar account to get the balance
-        const account = await waitForAccount(existingUser.publicKeyXlm);
-        const balance = account.balances.find((b: { asset_type: string; balance: string }) => b.asset_type === 'native')?.balance || '0';
-  
-        // Return the existing public key and balance to the frontend
+        const { email, currency, network = 'testnet' } = req.body;
+
+        // Add network validation
+        if (network && !['mainnet', 'testnet'].includes(network)) {
+            return res.status(400).json({ error: 'Invalid network parameter. Use "mainnet" or "testnet"' });
+        }
+
+        // Get the appropriate server instance
+        const server = getServer(network);
+
+        // Ensure that this feature is only available for XLM
+        if (currency !== 'XLM') {
+            return res.status(400).json({ error: 'This feature is only available for XLM' });
+        }
+
+        // Check if the user already has a publicKeyXlm
+        const existingUser = await User.findOne({ email });
+
+        if (!existingUser) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        if (existingUser.publicKeyXlm) {
+            console.log('User already has a Stellar account');
+            const account = await waitForAccount(existingUser.publicKeyXlm, network);
+            const balance = account.balances.find((b: { asset_type: string; balance: string }) => b.asset_type === 'native')?.balance || '0';
+            return res.json({
+                publicKey: existingUser.publicKeyXlm,
+                balance: balance,
+            });
+        }
+
+        // Create new account with appropriate network
+        console.log('Creating a new Stellar account for the user');
+        const pair = Keypair.random();
+        const sourceAccount = await server.loadAccount(fundingPublicKey);
+
+        const transaction = new TransactionBuilder(sourceAccount, {
+            fee: BASE_FEE,
+            networkPassphrase: network === 'mainnet' ? Networks.PUBLIC : Networks.TESTNET,
+        })
+            .addOperation(
+                Operation.createAccount({
+                    destination: pair.publicKey(),
+                    startingBalance: '10',
+                })
+            )
+            .setTimeout(30)
+            .build();
+
+        transaction.sign(fundingKeypair);
+        const transactionResult = await server.submitTransaction(transaction);
+        console.log('Transaction successful:', transactionResult);
+
+        await new Promise(res => setTimeout(res, 5000));
+        const account = await waitForAccount(pair.publicKey(), network);
+
+        // Encrypt the private key
+        const encryptedPrivateKey = encryptPrivateKey(pair.secret());
+
+        // Update the user's record with the new Stellar keypair and balance in MongoDB
+        const updatedUser = await User.findOneAndUpdate(
+            { email },
+            {
+                publicKeyXlm: pair.publicKey(),
+                privateKeyXlm: encryptedPrivateKey, // Store the encrypted private key
+            },
+            { new: true } // Return the updated document
+        );
+
+        if (!updatedUser) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Send the public key and balance to the frontend, not the private key
         return res.json({
-          publicKey: existingUser.publicKeyXlm,
-          balance: balance,
+            publicKey: pair.publicKey(),
+            balance: account.balances.find((b: { asset_type: string; balance: string }) => b.asset_type === 'native')?.balance || '0',
         });
-      }
-  
-      // If the user doesn't have a Stellar account, create a new one
-      console.log('Creating a new Stellar account for the user');
-      const pair = Keypair.random(); // Generate a new Stellar keypair
-  
-      // Load the funding account
-      const sourceAccount = await server.loadAccount(fundingPublicKey);
-  
-      // Create a transaction to create a new account with 10 XLM
-      const transaction = new TransactionBuilder(sourceAccount, {
-        fee: BASE_FEE,
-        networkPassphrase: Networks.TESTNET,
-      })
-        .addOperation(
-          Operation.createAccount({
-            destination: pair.publicKey(),
-            startingBalance: '10', // Send 10 XLM to the new account to create it
-          })
-        )
-        .setTimeout(30)
-        .build();
-  
-      // Sign the transaction with the funding account's secret key
-      transaction.sign(fundingKeypair);
-  
-      // Submit the transaction to the Stellar network
-      const transactionResult = await server.submitTransaction(transaction);
-      console.log('Transaction successful:', transactionResult);
-  
-      // Wait 5 seconds before trying to fetch the new account
-      await new Promise(res => setTimeout(res, 5000));
-  
-      // Wait for the new account to be available on the network
-      const account = await waitForAccount(pair.publicKey());
-  
-      // Encrypt the private key
-      const encryptedPrivateKey = encryptPrivateKey(pair.secret());
-  
-      // Update the user's record with the new Stellar keypair and balance in MongoDB
-      const updatedUser = await User.findOneAndUpdate(
-        { email },
-        {
-          publicKeyXlm: pair.publicKey(),
-          privateKeyXlm: encryptedPrivateKey, // Store the encrypted private key
-        },
-        { new: true } // Return the updated document
-      );
-  
-      if (!updatedUser) {
-        return res.status(404).json({ error: 'User not found' });
-      }
-  
-      // Send the public key and balance to the frontend, not the private key
-      return res.json({
-        publicKey: pair.publicKey(),
-        balance: account.balances.find((b: { asset_type: string; balance: string }) => b.asset_type === 'native')?.balance || '0',
-      });
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: 'Internal Server Error' });
+        console.error(error);
+        res.status(500).json({ error: 'Internal Server Error' });
     }
-  });
-  
+});
 
 export default router;
