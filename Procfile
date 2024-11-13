@@ -1,1 +1,1 @@
-web: dotenvx run -- node dist/index.js
+worker: npm start

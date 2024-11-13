@@ -6,7 +6,7 @@
   "scripts": {
     "build": "rimraf dist && npx tsc",
     "prestart": "npm run build",
-    "start": "dotenvx run -- node dist/index.js",
+    "start": "dotenvx run -f .env.production node dist/index.js",
     "preserve": "npm run build",
     "serve": "concurrently \"npx tsc -w\"  \"nodemon dist/index.js\"",
     "dev": "dotenvx run -- nodemon - exec 'ts-node' dist/index.js",
