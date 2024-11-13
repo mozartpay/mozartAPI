@@ -9,12 +9,12 @@ dotenv.config({ path: '.env.production' });
 
 const router = express.Router();
 
-// Replace the static server initialization with a function
-const getServer = (network: string = 'testnet'): StellarSdk.Horizon.Server => {
-    const url = network === 'mainnet' 
-        ? process.env.STELLAR_MAINNET_URL 
-        : process.env.STELLAR_TESTNET_URL;
-    return new StellarSdk.Horizon.Server(url as string);
+// Replace the existing getServer initialization with these static instances and function
+const testnetServer = new StellarSdk.Horizon.Server(process.env.STELLAR_TESTNET_URL as string);
+const mainnetServer = new StellarSdk.Horizon.Server(process.env.STELLAR_MAINNET_URL as string);
+
+const getServer = (network: string = 'testnet'): typeof testnetServer => {
+    return network === 'mainnet' ? mainnetServer : testnetServer;
 };
 
 // Decrypt function (same as the one in your previous code)

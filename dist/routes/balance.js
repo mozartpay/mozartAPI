@@ -46,12 +46,11 @@ const decryptPrivateKey = (encryptedPrivateKey) => {
         throw new Error('Failed to decrypt private key');
     }
 };
-// Remove the static server initialization and create a function to get the appropriate server
+// Replace the existing getServer function with these static instances and function
+const testnetServer = new stellar_sdk_1.default.Horizon.Server(process.env.STELLAR_TESTNET_URL);
+const mainnetServer = new stellar_sdk_1.default.Horizon.Server(process.env.STELLAR_MAINNET_URL);
 const getServer = (network = 'testnet') => {
-    const url = network === 'mainnet'
-        ? process.env.STELLAR_MAINNET_URL
-        : process.env.STELLAR_TESTNET_URL;
-    return new stellar_sdk_1.default.Horizon.Server(url);
+    return network === 'mainnet' ? mainnetServer : testnetServer;
 };
 // Route to fetch and return balances
 router.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {

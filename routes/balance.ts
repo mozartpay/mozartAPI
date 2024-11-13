@@ -47,12 +47,12 @@ interface Balance {
   balance: string;        // Balance amount as string
 }
 
-// Remove the static server initialization and create a function to get the appropriate server
-const getServer = (network: string = 'testnet'): StellarSdk.Horizon.Server => {
-  const url = network === 'mainnet' 
-    ? process.env.STELLAR_MAINNET_URL 
-    : process.env.STELLAR_TESTNET_URL;
-  return new StellarSdk.Horizon.Server(url as string);
+// Replace the existing getServer function with these static instances and function
+const testnetServer = new StellarSdk.Horizon.Server(process.env.STELLAR_TESTNET_URL as string);
+const mainnetServer = new StellarSdk.Horizon.Server(process.env.STELLAR_MAINNET_URL as string);
+
+const getServer = (network: string = 'testnet'): typeof testnetServer => {
+    return network === 'mainnet' ? mainnetServer : testnetServer;
 };
 
 // Route to fetch and return balances

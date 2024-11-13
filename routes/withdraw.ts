@@ -9,12 +9,12 @@ dotenv.config({ path: '.env.production' });
 
 const router = express.Router();
 
-// Replace the static server initialization with a function
-const getServer = (network: string = 'testnet'): StellarSdk.Horizon.Server => {
-    const url = network === 'mainnet' 
-        ? process.env.STELLAR_MAINNET_URL 
-        : process.env.STELLAR_TESTNET_URL;
-    return new StellarSdk.Horizon.Server(url as string);
+// Static server instances
+const testnetServer = new StellarSdk.Horizon.Server('https://horizon-testnet.stellar.org');
+const mainnetServer = new StellarSdk.Horizon.Server('https://horizon.stellar.org');
+
+const getServer = (network: string = 'testnet'): typeof testnetServer => {
+    return network === 'mainnet' ? mainnetServer : testnetServer;
 };
 
 const decryptPrivateKey = (encryptedPrivateKey: string): string => {

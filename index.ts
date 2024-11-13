@@ -22,7 +22,8 @@ import Notification from "./routes/notification";
 import helmet from 'helmet';
 
 
-require('dotenv').config();
+require('dotenv').config({ path: '.env.production'});
+
 
 const port = process.env.PORT || '8000';
 const app: Express = express();
@@ -61,9 +62,17 @@ const enforceHTTPS = (req: Request, res: Response, next: NextFunction ) => {
 
 
 // Use in production only
+if (process.env.NODE_ENV === 'development') {
+  require('dotenv').config({ path: '.env.production'});
+  console.log("Not Running enforceHTTPS")
+  console.log(process.env.NODE_ENV)
+ // app.use(enforceHTTPS);
+}
+
+// Then use the environment check
 if (process.env.NODE_ENV === 'production') {
-  console.log("Running enforceHTTPS")
   app.use(enforceHTTPS);
+  console.log("Running enforceHTTPS");
 }
 
 // Connect to database

@@ -32,12 +32,11 @@ if (encryptionKey.length !== 64) { // Expecting a hex-encoded 32-byte key
     throw new Error('ENCRYPTION_SECRET_KEY must be a 64-character hex string representing a 32-byte key');
 }
 const fundingKeypair = Keypair.fromSecret(fundingSecretKey);
-// Replace the static server initialization with a function
+// Replace the existing getServer initialization with these static instances and function
+const testnetServer = new stellar_sdk_1.default.Horizon.Server(process.env.STELLAR_TESTNET_URL);
+const mainnetServer = new stellar_sdk_1.default.Horizon.Server(process.env.STELLAR_MAINNET_URL);
 const getServer = (network = 'testnet') => {
-    const url = network === 'mainnet'
-        ? process.env.STELLAR_MAINNET_URL
-        : process.env.STELLAR_TESTNET_URL;
-    return new stellar_sdk_1.default.Horizon.Server(url);
+    return network === 'mainnet' ? mainnetServer : testnetServer;
 };
 // Encryption function using AES-256 with a hex-encoded key
 const encryptPrivateKey = (privateKey) => {
