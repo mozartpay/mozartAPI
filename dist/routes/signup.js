@@ -17,8 +17,9 @@ const bcrypt_1 = __importDefault(require("bcrypt"));
 const user_1 = require("../models/user");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const messagebird_1 = __importDefault(require("messagebird"));
+const dotenv_1 = __importDefault(require("dotenv"));
 const router = express_1.default.Router();
-require('dotenv').config();
+dotenv_1.default.config({ path: '.env.production' });
 router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {

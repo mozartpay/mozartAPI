@@ -17,7 +17,7 @@ const stellar_sdk_1 = __importDefault(require("@stellar/stellar-sdk"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const user_1 = require("../models/user");
 const crypto_1 = __importDefault(require("crypto"));
-dotenv_1.default.config({ path: './config.env' });
+dotenv_1.default.config({ path: '.env.production' });
 const { Keypair, TransactionBuilder, Networks, BASE_FEE, Operation } = stellar_sdk_1.default;
 const router = express_1.default.Router();
 // Correct environment variable names
@@ -25,7 +25,7 @@ const fundingSecretKey = process.env.STELLAR_SECRET_KEY;
 const fundingPublicKey = process.env.STELLAR_PUBLIC_KEY;
 const encryptionKey = process.env.ENCRYPTION_SECRET_KEY; // Add an encryption secret in your .env file
 if (!fundingSecretKey || !fundingPublicKey || !encryptionKey) {
-    throw new Error('STELLAR_SECRET_KEY, STELLAR_PUBLIC_KEY, and ENCRYPTION_SECRET_KEY must be set in config.env');
+    throw new Error('STELLAR_SECRET_KEY, STELLAR_PUBLIC_KEY, and ENCRYPTION_SECRET_KEY must be set in .env');
 }
 // Check if encryption key is of the correct length
 if (encryptionKey.length !== 64) { // Expecting a hex-encoded 32-byte key

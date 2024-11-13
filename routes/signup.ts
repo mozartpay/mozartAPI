@@ -3,8 +3,10 @@ import bcrypt from 'bcrypt';
 import { User } from '../models/user';
 import jwt from 'jsonwebtoken';
 import initMB from 'messagebird';
+import dotenv from 'dotenv';
+
 const router = express.Router();
-require('dotenv').config();
+dotenv.config({ path: '.env.production' });
 
 export interface CustomRequest extends Request {
   token: string;

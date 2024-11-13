@@ -19,7 +19,7 @@ const user_1 = require("../models/user"); // Import User model
 const crypto_1 = __importDefault(require("crypto"));
 const dotenv_1 = __importDefault(require("dotenv"));
 // Load environment variables
-dotenv_1.default.config();
+dotenv_1.default.config({ path: '.env.production' });
 const router = express_1.default.Router();
 // Add CORS middleware
 router.use((0, cors_1.default)({

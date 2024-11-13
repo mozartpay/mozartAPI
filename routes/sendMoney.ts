@@ -5,7 +5,8 @@ import { User } from '../models/user'; // Import the User model
 import StellarSdk from '@stellar/stellar-sdk';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
-dotenv.config({ path: 'config.env' });
+
+dotenv.config({ path: '.env.production' });
 
 const mailer = new NodeMailgun();
 mailer.apiKey = process.env.MAILGUN_API_KEY || '';

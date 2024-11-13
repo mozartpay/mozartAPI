@@ -40,7 +40,7 @@ const MoneyRequest_1 = __importDefault(require("../models/MoneyRequest"));
 const ts_mailgun_1 = require("ts-mailgun");
 const dotenv = __importStar(require("dotenv"));
 const mailer = new ts_mailgun_1.NodeMailgun();
-dotenv.config({ path: 'config.env' });
+dotenv.config({ path: '.env.production' });
 mailer.apiKey = process.env.MAILGUN_API_KEY || '';
 mailer.domain = process.env.MAILGUN_DOMAIN || 'mozartpay.com';
 mailer.options = {

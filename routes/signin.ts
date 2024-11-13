@@ -8,7 +8,7 @@ import jwt from 'jsonwebtoken';
 
 import * as dotenv from 'dotenv';
 
-dotenv.config({ path: 'config.env' });
+dotenv.config({ path: '.env.production' });
 
 const router = express.Router();
 const app: Express = express();

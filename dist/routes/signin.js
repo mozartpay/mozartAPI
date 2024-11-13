@@ -43,7 +43,7 @@ const cors_1 = __importDefault(require("cors"));
 const ts_mailgun_1 = require("ts-mailgun");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const dotenv = __importStar(require("dotenv"));
-dotenv.config({ path: 'config.env' });
+dotenv.config({ path: '.env.production' });
 const router = express_1.default.Router();
 const app = (0, express_1.default)();
 // Set up CORS middleware globally

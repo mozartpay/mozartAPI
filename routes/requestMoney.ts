@@ -4,7 +4,7 @@ import { NodeMailgun } from 'ts-mailgun';
 import * as dotenv from 'dotenv';
 
 const mailer = new NodeMailgun();
-dotenv.config({ path: 'config.env' });
+dotenv.config({ path: '.env.production' });
 mailer.apiKey = process.env.MAILGUN_API_KEY || '';
 mailer.domain = process.env.MAILGUN_DOMAIN || 'mozartpay.com';
 mailer.options = {

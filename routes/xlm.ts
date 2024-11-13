@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import { User } from '../models/user';
 import crypto from 'crypto';
 
-dotenv.config({ path: './config.env' });
+dotenv.config({ path: '.env.production' });
 
 const { Keypair, TransactionBuilder, Networks, BASE_FEE, Operation } = StellarSdk;
 
@@ -16,7 +16,7 @@ const fundingPublicKey = process.env.STELLAR_PUBLIC_KEY as string;
 const encryptionKey = process.env.ENCRYPTION_SECRET_KEY as string; // Add an encryption secret in your .env file
 
 if (!fundingSecretKey || !fundingPublicKey || !encryptionKey) {
-    throw new Error('STELLAR_SECRET_KEY, STELLAR_PUBLIC_KEY, and ENCRYPTION_SECRET_KEY must be set in config.env');
+    throw new Error('STELLAR_SECRET_KEY, STELLAR_PUBLIC_KEY, and ENCRYPTION_SECRET_KEY must be set in .env');
 }
 
 // Check if encryption key is of the correct length
