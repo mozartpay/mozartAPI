@@ -1,1 +1,1 @@
-worker: npm start
+web: dotenvx run -- node index.js
