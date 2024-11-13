@@ -1,1 +1,1 @@
-web: npm start
+web: dotenvx run -f .env.production node dist/index.js
