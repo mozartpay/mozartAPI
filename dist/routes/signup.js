@@ -54,6 +54,7 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             balanceEur: "0",
             balanceCop: "0",
             verificationCode: verificationCode,
+            preferredNetwork: "https://horizon-testnet.stellar.org",
         });
         // Get JWT secret from environment variables
         const jwtSecret = process.env.JWT_SECRET;

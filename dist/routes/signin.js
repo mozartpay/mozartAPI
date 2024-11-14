@@ -128,7 +128,7 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         return res.status(200).json({
             message: 'Login successful!',
             token,
-            user: { email: user.email, name: user.name, balance: user.balance },
+            user: { email: user.email, name: user.name, balance: user.balance, preferredNetwork: user.preferredNetwork },
         });
     }
     catch (error) {

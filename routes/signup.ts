@@ -51,6 +51,7 @@ router.post('/', async (req: Request, res: Response) => {
       balanceEur: "0",
       balanceCop: "0",
       verificationCode: verificationCode,
+      preferredNetwork: "https://horizon-testnet.stellar.org",
     });
 
     // Get JWT secret from environment variables
