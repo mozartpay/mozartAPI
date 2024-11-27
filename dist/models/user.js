@@ -27,6 +27,10 @@ const userSchema = new mongoose_1.default.Schema({
     verificationCode: String,
     preferredCurrency: { type: String, default: 'USD' },
     preferredNetwork: { type: String, default: 'XLM' },
-    createdAt: { type: Date, default: Date.now }
+    createdAt: { type: Date, default: Date.now },
+    isPhoneVerified: {
+        type: Boolean,
+        default: false
+    }
 });
 exports.User = mongoose_1.default.model('User', userSchema);

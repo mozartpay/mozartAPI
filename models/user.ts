@@ -23,6 +23,7 @@ interface UserDoc extends mongoose.Document {
   preferredCurrency:string;
   preferredNetwork: string;
   createdAt: Date;
+  isPhoneVerified: boolean;
 }
 
 const userSchema = new mongoose.Schema<UserDoc>({
@@ -47,7 +48,11 @@ const userSchema = new mongoose.Schema<UserDoc>({
   verificationCode: String,
   preferredCurrency: { type: String, default: 'USD' },
   preferredNetwork: { type: String, default: 'XLM' },
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
+  isPhoneVerified: {
+    type: Boolean,
+    default: false
+  }
 });
 
 export const User = mongoose.model<UserDoc>('User', userSchema);

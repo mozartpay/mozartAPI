@@ -55,6 +55,8 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             balanceCop: "0",
             verificationCode: verificationCode,
             preferredNetwork: "https://horizon-testnet.stellar.org",
+            isPhoneVerified: false,
+            isEmailVerified: false,
         });
         // Get JWT secret from environment variables
         const jwtSecret = process.env.JWT_SECRET;
@@ -87,10 +89,11 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             }
         });
         return res.status(201).json({
-            message: 'Signup successful!',
+            message: 'Phone number verification code sent!',
             user: {
                 email: newUser.email,
                 name: newUser.name,
+                isPhoneVerified: newUser.isPhoneVerified,
             },
             token,
         });
@@ -110,7 +113,10 @@ router.post('/verify', (req, res) => __awaiter(void 0, void 0, void 0, function*
         }
         // Compare the provided verification code with the one stored in the user document
         if (user.verificationCode === code) {
-            return res.status(200).json({ message: 'Verification code is valid.' });
+            // Update the user's phone verification status
+            user.isPhoneVerified = true;
+            yield user.save();
+            return res.status(200).json({ message: 'Phone number verified successfully.' });
         }
         else {
             return res.status(400).json({ message: 'Invalid verification code.' });
