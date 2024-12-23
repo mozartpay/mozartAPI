@@ -21,8 +21,6 @@ function connectToDB() {
         const mongoUri = process.env.MONGO_URI;
         yield mongoose_1.default
             .connect(mongoUri, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
             heartbeatFrequencyMS: 3000,
             serverSelectionTimeoutMS: 30000,
             // ssl: true,

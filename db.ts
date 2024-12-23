@@ -9,8 +9,6 @@ async function connectToDB() {
 
   await mongoose
     .connect(mongoUri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
       heartbeatFrequencyMS: 3000,
       serverSelectionTimeoutMS: 30000,
       // ssl: true,

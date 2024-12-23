@@ -9,7 +9,7 @@
     "start": "dotenvx run -f .env.production node dist/index.js",
     "preserve": "npm run build",
     "serve": "concurrently \"npx tsc -w\"  \"nodemon dist/index.js\"",
-    "dev": "dotenvx run -- nodemon - exec 'ts-node' dist/index.js",
+    "dev": "dotenvx run -f .env.production -- nodemon - exec 'ts-node' dist/index.js",
     "test": "node --test test/api.test.cjs"
   },
   "keywords": [],
@@ -45,6 +45,8 @@
     "i": "^0.3.7",
     "jsonwebtoken": "^9.0.2",
     "messagebird": "^3.5.0",
+    "mongodb": "^6.12.0",
+    "mongoose": "^8.5.2",
     "multer": "^1.4.5-lts.1",
     "node-fetch": "^3.3.2",
     "npm": "^9.8.1",
@@ -65,7 +67,6 @@
     "@types/stellar-sdk": "^0.15.1",
     "@types/xml2js": "^0.4.14",
     "dotenv": "^16.4.5",
-    "mongoose": "^8.8.0",
     "nodemon": "^2.0.22",
     "supertest": "^7.0.0"
   }

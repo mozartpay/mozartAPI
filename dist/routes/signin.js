@@ -101,6 +101,8 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const passwordMatch = yield bcrypt_1.default.compare(password, user.password);
         if (!passwordMatch)
             return res.status(401).json({ message: 'Incorrect password.' });
+        user.lastLogin = new Date();
+        yield user.save();
         // Generate JWT
         const token = jsonwebtoken_1.default.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
         // Send email notification after successful login
@@ -128,7 +130,7 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         return res.status(200).json({
             message: 'Login successful!',
             token,
-            user: { email: user.email, name: user.name, balance: user.balance, preferredNetwork: user.preferredNetwork, isPhoneVerified: user.isPhoneVerified },
+            user: { email: user.email, name: user.name, balance: user.balance, preferredNetwork: user.preferences.network, isPhoneVerified: user.isPhoneVerified },
         });
     }
     catch (error) {

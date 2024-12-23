@@ -5,7 +5,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
-const db_1 = __importDefault(require("./db"));
 const oas_1 = __importDefault(require("./routes/oas"));
 const sep0001_1 = __importDefault(require("./routes/SEPs/sep0001"));
 const sep0002_1 = __importDefault(require("./routes/SEPs/sep0002"));
@@ -25,11 +24,12 @@ const balance_1 = __importDefault(require("./routes/balance"));
 const xlm_1 = __importDefault(require("./routes/xlm"));
 const notification_1 = __importDefault(require("./routes/notification"));
 const helmet_1 = __importDefault(require("helmet"));
+const db_1 = __importDefault(require("./db"));
 require('dotenv').config({ path: '.env.production' });
 const port = process.env.PORT || '8000';
 const app = (0, express_1.default)();
 app.use((0, helmet_1.default)());
-const allowedOrigins = ['https://mozartpay.com', 'https://www.mozartpay.com', 'http://localhost:3000', 'https://mozart-api-21ea5fd801a8.herokuapp.com', 'http://localhost:5173', 'https://mozart-api-21ea5fd801a8.herokuapp.com/api', 'mozart-api-21ea5fd801a8.herokuapp.com'];
+const allowedOrigins = ['https://mozartpay.com', 'https://www.mozartpay.com', 'http://localhost:3000', 'https://mozart-api-21ea5fd801a8.herokuapp.com', 'http://localhost:5173', 'https://mozart-api-21ea5fd801a8.herokuapp.com/api', 'http://localhost:8000'];
 app.use((0, cors_1.default)({
     origin: function (origin, callback) {
         if (!origin || allowedOrigins.indexOf(origin) !== -1) {
@@ -61,7 +61,7 @@ if (process.env.NODE_ENV === 'production') {
 else {
     console.log("Not Running enforceHTTPS - Development Mode");
 }
-// Connect to database
+;
 (0, db_1.default)();
 (0, sep0001_1.default)();
 // Default route

@@ -20,10 +20,14 @@ interface UserDoc extends mongoose.Document {
   token:string;
   number:string;
   verificationCode:string;
-  preferredCurrency:string;
-  preferredNetwork: string;
+  preferences: {
+    currency: string;
+    network: string;
+    hideBalances: boolean;
+  };
   createdAt: Date;
   isPhoneVerified: boolean;
+  lastLogin: Date;
 }
 
 const userSchema = new mongoose.Schema<UserDoc>({
@@ -46,13 +50,17 @@ const userSchema = new mongoose.Schema<UserDoc>({
   token: String,
   number: String,
   verificationCode: String,
-  preferredCurrency: { type: String, default: 'USD' },
-  preferredNetwork: { type: String, default: 'XLM' },
+  preferences: {
+    currency: { type: String, default: 'USD' },
+    network: { type: String, default: 'XLM' },
+    hideBalances: { type: Boolean, default: false }
+  },
   createdAt: { type: Date, default: Date.now },
   isPhoneVerified: {
     type: Boolean,
     default: false
-  }
+  },
+  lastLogin: { type: Date },
 });
 
 export const User = mongoose.model<UserDoc>('User', userSchema);

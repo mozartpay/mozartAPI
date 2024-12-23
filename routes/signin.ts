@@ -76,6 +76,9 @@ router.post('/', async (req: Request, res: Response) => {
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) return res.status(401).json({ message: 'Incorrect password.' });
 
+    user.lastLogin = new Date();
+    await user.save();
+
     // Generate JWT
     const token = jwt.sign(
       { id: user._id, email: user.email },
@@ -109,7 +112,7 @@ router.post('/', async (req: Request, res: Response) => {
     return res.status(200).json({
       message: 'Login successful!',
       token, // Return the JWT token
-      user: { email: user.email, name: user.name, balance: user.balance, preferredNetwork: user.preferredNetwork, isPhoneVerified: user.isPhoneVerified },
+      user: { email: user.email, name: user.name, balance: user.balance, preferredNetwork: user.preferences.network, isPhoneVerified: user.isPhoneVerified },
     });
   } catch (error) {
     console.error('Error during signin:', error);

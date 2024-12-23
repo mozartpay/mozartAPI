@@ -68,8 +68,11 @@ router.post('/preferredCurrency', (req, res) => __awaiter(void 0, void 0, void 0
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
-        console.log('User preferred currency updated:', user.preferredCurrency);
-        return res.status(200).json({ message: 'Preferred currency updated successfully', preferredCurrency: user.preferredCurrency });
+        console.log('User preferred currency updated:', user.preferences.currency);
+        return res.status(200).json({
+            message: 'Preferred currency updated successfully',
+            user
+        });
     }
     catch (error) {
         console.error('Error updating user preferred currency:', error);
@@ -87,15 +90,103 @@ router.post('/preferredNetwork', (req, res) => __awaiter(void 0, void 0, void 0,
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
-        console.log('User preferred network updated:', user.preferredNetwork);
+        console.log('User preferred network updated:', user.preferences.network);
         return res.status(200).json({
             message: 'Preferred network updated successfully',
-            preferredNetwork: user.preferredNetwork
+            user
         });
     }
     catch (error) {
         console.error('Error updating user preferred network:', error);
         return res.status(500).json({ message: 'Internal server error' });
+    }
+}));
+// Route to update user's balance visibility setting
+router.post('/hideBalances', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { email, hideBalances } = req.body;
+        // Input validation
+        if (!email) {
+            return res.status(400).json({
+                status: 'error',
+                code: 'MISSING_EMAIL',
+                message: 'Email is required'
+            });
+        }
+        if (typeof hideBalances !== 'boolean') {
+            return res.status(400).json({
+                status: 'error',
+                code: 'INVALID_HIDE_BALANCES',
+                message: 'hideBalances must be a boolean value'
+            });
+        }
+        const user = yield user_1.User.findOneAndUpdate({ email }, { hideBalances }, {
+            new: true,
+            maxTimeMS: 15000
+        });
+        if (!user) {
+            return res.status(404).json({
+                status: 'error',
+                code: 'USER_NOT_FOUND',
+                message: 'User not found'
+            });
+        }
+        // Enhanced logging based on hideBalances value
+        if (hideBalances) {
+            console.log(`User ${email} has enabled balance hiding`);
+        }
+        else {
+            console.log(`User ${email} has disabled balance hiding`);
+        }
+        console.log('User balance visibility updated:', user.preferences.hideBalances);
+        return res.status(200).json({
+            status: 'success',
+            data: {
+                user
+            },
+            message: `Balance visibility ${hideBalances ? 'hidden' : 'shown'} successfully`
+        });
+    }
+    catch (error) {
+        console.error('Error updating balance visibility:', error);
+        // Database timeout errors
+        if (error.name === 'MongooseError' && error.message.includes('buffering timed out')) {
+            return res.status(503).json({
+                status: 'error',
+                code: 'DATABASE_TIMEOUT',
+                message: 'Database operation timed out. Please try again later'
+            });
+        }
+        if (error.name === 'MongoTimeoutError') {
+            return res.status(503).json({
+                status: 'error',
+                code: 'CONNECTION_TIMEOUT',
+                message: 'Database connection timed out. Please try again later'
+            });
+        }
+        // Validation errors
+        if (error.name === 'ValidationError') {
+            return res.status(400).json({
+                status: 'error',
+                code: 'VALIDATION_ERROR',
+                message: 'Invalid data provided',
+                details: error.message
+            });
+        }
+        // Generic database errors
+        if (error.name === 'MongoError' || error.name === 'MongoServerError') {
+            return res.status(503).json({
+                status: 'error',
+                code: 'DATABASE_ERROR',
+                message: 'Database error occurred. Please try again later'
+            });
+        }
+        // Default error response
+        return res.status(500).json({
+            status: 'error',
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'An unexpected error occurred'
+        });
     }
 }));
 exports.default = router;

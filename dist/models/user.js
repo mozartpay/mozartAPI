@@ -25,12 +25,16 @@ const userSchema = new mongoose_1.default.Schema({
     token: String,
     number: String,
     verificationCode: String,
-    preferredCurrency: { type: String, default: 'USD' },
-    preferredNetwork: { type: String, default: 'XLM' },
+    preferences: {
+        currency: { type: String, default: 'USD' },
+        network: { type: String, default: 'XLM' },
+        hideBalances: { type: Boolean, default: false }
+    },
     createdAt: { type: Date, default: Date.now },
     isPhoneVerified: {
         type: Boolean,
         default: false
-    }
+    },
+    lastLogin: { type: Date },
 });
 exports.User = mongoose_1.default.model('User', userSchema);

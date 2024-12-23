@@ -1,6 +1,5 @@
 import express, { Express, NextFunction, Request, Response } from "express";
 import cors from 'cors';
-import connectToDB from './db';
 import oas from './routes/oas';
 import runSepOne from './routes/SEPs/sep0001';
 import Federation from "./routes/SEPs/sep0002";
@@ -20,6 +19,7 @@ import Balance from "./routes/balance";
 import Xlm from "./routes/xlm";
 import Notification from "./routes/notification";
 import helmet from 'helmet';
+import connectToDB from './db';
 
 
 
@@ -32,7 +32,7 @@ const app: Express = express();
 app.use(helmet());
 
 
-const allowedOrigins = ['https://mozartpay.com', 'https://www.mozartpay.com', 'http://localhost:3000', 'https://mozart-api-21ea5fd801a8.herokuapp.com', 'http://localhost:5173', 'https://mozart-api-21ea5fd801a8.herokuapp.com/api', 'mozart-api-21ea5fd801a8.herokuapp.com'];
+const allowedOrigins = ['https://mozartpay.com', 'https://www.mozartpay.com', 'http://localhost:3000', 'https://mozart-api-21ea5fd801a8.herokuapp.com', 'http://localhost:5173', 'https://mozart-api-21ea5fd801a8.herokuapp.com/api', 'http://localhost:8000'];
 
 app.use(cors({
         origin: function (origin, callback) {
@@ -59,20 +59,18 @@ const enforceHTTPS = (req: Request, res: Response, next: NextFunction ) => {
   }
   next();
 };
-
-
 // Then use the environment check
 if (process.env.NODE_ENV === 'production') {
   app.use(enforceHTTPS);
   console.log("Running enforceHTTPS");
 } else {
   console.log("Not Running enforceHTTPS - Development Mode");
-}
+};  
 
-// Connect to database
 connectToDB();
 
-runSepOne()
+
+runSepOne();
 
 // Default route
 app.get("/", (req: Request, res: Response) => {
