@@ -22,15 +22,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -50,7 +41,7 @@ mailer.fromEmail = 'admin@mozartpay.com';
 mailer.fromTitle = 'MozartPay';
 mailer.init();
 const router = express_1.default.Router();
-router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.post('/', async (req, res) => {
     res.header("Access-Control-Allow-Origin", '*');
     res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
     res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
@@ -65,7 +56,7 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             receiverName,
             receiverEmail,
         });
-        yield newTransaction.save();
+        await newTransaction.save();
         // Generate URLs to view the request in the dashboard (assuming frontend routes)
         const transactionId = newTransaction._id; // Assuming Mongoose generates `_id`
         const receiverUrl = `https://www.mozartpay.com/login?redirect=/admin/?requestId=${transactionId}`;
@@ -98,11 +89,11 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         console.error('Error storing transaction data:', error);
         res.status(500).json({ error: 'An error occurred while storing the data.' });
     }
-}));
-router.get('/:senderEmail', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+});
+router.get('/:senderEmail', async (req, res) => {
     try {
         const senderEmail = req.params.senderEmail;
-        const transactions = yield MoneyRequest_1.default.find({ senderEmail });
+        const transactions = await MoneyRequest_1.default.find({ senderEmail });
         if (!transactions) {
             return res.status(404).json({ message: 'No transactions found for the provided senderEmail' });
         }
@@ -112,11 +103,11 @@ router.get('/:senderEmail', (req, res) => __awaiter(void 0, void 0, void 0, func
         console.error('Error fetching transactions:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
-}));
-router.get('/receiver/:receiverEmail', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+});
+router.get('/receiver/:receiverEmail', async (req, res) => {
     try {
         const receiverEmail = req.params.receiverEmail;
-        const transactions = yield MoneyRequest_1.default.find({ receiverEmail });
+        const transactions = await MoneyRequest_1.default.find({ receiverEmail });
         if (!transactions) {
             return res.status(404).json({ message: 'No transactions found for the provided receiverEmail' });
         }
@@ -126,5 +117,5 @@ router.get('/receiver/:receiverEmail', (req, res) => __awaiter(void 0, void 0, v
         console.error('Error fetching transactions:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
-}));
+});
 exports.default = router;

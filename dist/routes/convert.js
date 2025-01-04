@@ -1,13 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -17,7 +8,7 @@ const CC = require('currency-converter-lt');
 const router = express_1.default.Router();
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
-router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.post('/', async (req, res) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
@@ -31,7 +22,7 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             amount: amount,
         });
         // Perform the conversion
-        let convertedAmount = yield currencyConverter.convert();
+        let convertedAmount = await currencyConverter.convert();
         // Log the conversion rate for debugging
         console.log(`Converted ${amount} ${sourceCurrency} to ${convertedAmount} ${targetCurrency}`);
         // Apply adjustment based on currency pairs
@@ -58,5 +49,5 @@ router.post('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         console.error('Error converting:', error);
         res.status(500).json({ error: 'An error occurred during conversion.' });
     }
-}));
+});
 exports.default = router;

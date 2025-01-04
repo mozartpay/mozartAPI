@@ -7,7 +7,7 @@ const router = express.Router();
 
 // Enable CORS for specific origin and allow credentials
 app.use(cors({
-  origin: 'http://localhost:3000', // Allow requests from your frontend origin
+  origin: ['http://localhost:3000', 'http://localhost:5173'], // Allow requests from your frontend origin
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin'],
   credentials: true, // Allow credentials (cookies, authentication headers, etc.)
@@ -15,21 +15,73 @@ app.use(cors({
 
 // Route to get user by email
 router.get('/:email', async (req: Request, res: Response) => {
+  console.log('Received request to fetch user profile:', req.params);
   try {
     const email = req.params.email;
+
+    // Input validation
+    if (!email) {
+      console.log('Missing email parameter');
+      return res.status(400).json({
+        status: 'error',
+        code: 'MISSING_EMAIL',
+        message: 'Email parameter is required'
+      });
+    }
 
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      console.log('User not found for email:', email);
+      return res.status(404).json({
+        status: 'error',
+        code: 'USER_NOT_FOUND',
+        message: 'User not found'
+      });
     }
 
-    // Extract and return user information
-    const userInfo = user;
-    res.status(200).json(userInfo);
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.log(`Successfully retrieved user profile for ${email}`);
+    res.status(200).json({
+      status: 'success',
+      data: {
+        user
+      }
+    });
+  } catch (error: any) {
+    console.error('Error fetching user profile:', error);
+    
+    // Database timeout errors
+    if (error.name === 'MongooseError' && error.message.includes('buffering timed out')) {
+      return res.status(503).json({
+        status: 'error',
+        code: 'DATABASE_TIMEOUT',
+        message: 'Database operation timed out. Please try again later'
+      });
+    }
+    
+    if (error.name === 'MongoTimeoutError') {
+      return res.status(503).json({
+        status: 'error',
+        code: 'CONNECTION_TIMEOUT',
+        message: 'Database connection timed out. Please try again later'
+      });
+    }
+
+    // Generic database errors
+    if (error.name === 'MongoError' || error.name === 'MongoServerError') {
+      return res.status(503).json({
+        status: 'error',
+        code: 'DATABASE_ERROR',
+        message: 'Database error occurred. Please try again later'
+      });
+    }
+
+    // Default error response
+    return res.status(500).json({
+      status: 'error',
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'An unexpected error occurred'
+    });
   }
 });
 
@@ -114,11 +166,16 @@ router.post('/preferredNetwork', async (req: Request, res: Response) => {
 
 // Route to update user's balance visibility setting
 router.post('/hideBalances', async (req: Request, res: Response) => {
+  console.log('Received request to update balance visibility:', req.body);
   try {
     const { email, hideBalances } = req.body;
 
+    // Debugging: Log incoming request data
+    console.log('Received request to update balance visibility:', { email, hideBalances });
+
     // Input validation
     if (!email) {
+      console.log('Missing email in request');
       return res.status(400).json({
         status: 'error',
         code: 'MISSING_EMAIL',
@@ -127,6 +184,7 @@ router.post('/hideBalances', async (req: Request, res: Response) => {
     }
 
     if (typeof hideBalances !== 'boolean') {
+      console.log('Invalid hideBalances value:', hideBalances);
       return res.status(400).json({
         status: 'error',
         code: 'INVALID_HIDE_BALANCES',
@@ -136,7 +194,7 @@ router.post('/hideBalances', async (req: Request, res: Response) => {
 
     const user = await User.findOneAndUpdate(
       { email },
-      { hideBalances },
+      { $set: { 'preferences.hideBalances': hideBalances } },
       { 
         new: true,
         maxTimeMS: 15000
@@ -144,6 +202,7 @@ router.post('/hideBalances', async (req: Request, res: Response) => {
     );
 
     if (!user) {
+      console.log('User not found for email:', email);
       return res.status(404).json({
         status: 'error',
         code: 'USER_NOT_FOUND',

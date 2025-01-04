@@ -18,8 +18,10 @@ import Trustline from './routes/trustline';
 import Balance from "./routes/balance";
 import Xlm from "./routes/xlm";
 import Notification from "./routes/notification";
+import swap from './routes/swap';
 import helmet from 'helmet';
 import connectToDB from './db';
+
 
 
 
@@ -60,7 +62,7 @@ const enforceHTTPS = (req: Request, res: Response, next: NextFunction ) => {
   next();
 };
 // Then use the environment check
-if (process.env.NODE_ENV === 'production') {
+if (process.env.NODE_ENV === 'development') {
   app.use(enforceHTTPS);
   console.log("Running enforceHTTPS");
 } else {
@@ -93,6 +95,7 @@ app.use('/api/balance', Balance);
 app.use('/api/xlm', Xlm);
 app.use('/api/federation', Federation);
 app.use('/api/notifications', Notification);
+app.use('/api/swap', swap);
 app.use('/api/oas', oas);
 
 

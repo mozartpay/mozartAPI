@@ -1,12 +1,12 @@
 {
   "compilerOptions": {
-    "target": "ES2016",
+    "target": "ES2020",
     "module": "CommonJS",
     "rootDir": "./",      
     "outDir": "./dist",
-     "moduleResolution": "node",                                           
-     "typeRoots": ["./@types", "./node_modules/@types"],                                 
-     "types": [],      
+    "moduleResolution": "Node",                                           
+    "typeRoots": ["./@types", "./node_modules/@types"],                                 
+    "types": [],      
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,            
     "esModuleInterop": true, 
@@ -14,6 +14,6 @@
     "strict": true, 
     "skipLibCheck": true 
   },
-  "include": ["./**/*.ts", "test/index.test.cjs", "test/api.test.cjs"],
+  "include": ["./**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

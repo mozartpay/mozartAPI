@@ -23,6 +23,7 @@ const trustline_1 = __importDefault(require("./routes/trustline"));
 const balance_1 = __importDefault(require("./routes/balance"));
 const xlm_1 = __importDefault(require("./routes/xlm"));
 const notification_1 = __importDefault(require("./routes/notification"));
+const swap_1 = __importDefault(require("./routes/swap"));
 const helmet_1 = __importDefault(require("helmet"));
 const db_1 = __importDefault(require("./db"));
 require('dotenv').config({ path: '.env.production' });
@@ -54,7 +55,7 @@ const enforceHTTPS = (req, res, next) => {
     next();
 };
 // Then use the environment check
-if (process.env.NODE_ENV === 'production') {
+if (process.env.NODE_ENV === 'development') {
     app.use(enforceHTTPS);
     console.log("Running enforceHTTPS");
 }
@@ -84,6 +85,7 @@ app.use('/api/balance', balance_1.default);
 app.use('/api/xlm', xlm_1.default);
 app.use('/api/federation', sep0002_1.default);
 app.use('/api/notifications', notification_1.default);
+app.use('/api/swap', swap_1.default);
 app.use('/api/oas', oas_1.default);
 // Start the server
 app.listen(port, () => {

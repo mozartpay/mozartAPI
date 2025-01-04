@@ -1,35 +1,25 @@
-import mongoose from 'mongoose';
+import mongoose, { Schema, Document } from 'mongoose';
 
-interface AgreementDoc extends mongoose.Document {
+export interface AgreementDoc extends Document {
   contractID: string;
   terms: string;
   createdBy: string;
+  status: string;
   signedBy?: string;
-  status: 'Created' | 'Signed' | 'Canceled' | 'Updated';
+  vaultBalance?: number;
   newTerms?: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
-const agreementSchema = new mongoose.Schema<AgreementDoc>({
-  contractID: { type: String, required: true, unique: true },
+const AgreementSchema = new Schema({
+  contractID: { type: String, required: true },
   terms: { type: String, required: true },
   createdBy: { type: String, required: true },
+  status: { type: String, required: true },
   signedBy: { type: String },
-  status: { 
-    type: String, 
-    enum: ['Created', 'Signed', 'Canceled', 'Updated'],
-    default: 'Created' 
-  },
-  newTerms: { type: String },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
-});
+  vaultBalance: { type: Number, default: 0 },
+  newTerms: { type: String }
+},{ timestamps: true });
 
-// Update the updatedAt field on save
-agreementSchema.pre('save', function(next) {
-  this.updatedAt = new Date();
-  next();
-});
-
-export const Agreement = mongoose.model<AgreementDoc>('Agreement', agreementSchema);
+export const Agreement = mongoose.model<AgreementDoc>('Agreement', AgreementSchema);

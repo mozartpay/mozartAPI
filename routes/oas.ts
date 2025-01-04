@@ -47,7 +47,7 @@ router.post('/get-agreement', async (req: Request, res: Response) => {
     if (!agreement) {
       return res.status(404).json({ error: 'Agreement not found' });
     }
-
+console.log(agreement);
     return res.status(200).json({ agreement });
   } catch (error: any) {
     console.error('Error fetching agreement:', error.message);
@@ -67,7 +67,10 @@ router.post('/sign-agreement', async (req: Request, res: Response) => {
     
     const contractID = result?.Document?.Agreement?.[0]?.ContractID?.[0];
     const userID = result?.Document?.Agreement?.[0]?.UserID?.[0];
-    if (!contractID || !userID) {
+    const accountAddress = result?.Document?.Agreement?.[0]?.AccountAddress?.[0];
+    const depositAmount = result?.Document?.Agreement?.[0]?.DepositAmount?.[0];
+
+    if (!contractID || !userID || !accountAddress || !depositAmount) {
       return res.status(400).json({ error: 'Required fields not found in input' });
     }
 
@@ -78,10 +81,11 @@ router.post('/sign-agreement', async (req: Request, res: Response) => {
 
     agreement.status = 'Signed';
     agreement.signedBy = userID;
+    agreement.vaultBalance = depositAmount;
     await agreement.save();
 
     return res.status(200).json({ 
-      message: 'Agreement signed successfully', 
+      message: 'Agreement signed and deposit processed successfully', 
       agreement 
     });
   } catch (error: any) {
@@ -136,8 +140,10 @@ router.post('/cancel-agreement', async (req: Request, res: Response) => {
     );
 
     const contractID = result?.Document?.Agreement?.[0]?.ContractID?.[0];
-    if (!contractID) {
-      return res.status(400).json({ error: 'Contract ID not found in input' });
+    const accountAddress = result?.Document?.Agreement?.[0]?.AccountAddress?.[0];
+
+    if (!contractID || !accountAddress) {
+      return res.status(400).json({ error: 'Required fields not found in input' });
     }
 
     const agreement = await Agreement.findOne({ contractID });
@@ -146,10 +152,11 @@ router.post('/cancel-agreement', async (req: Request, res: Response) => {
     }
 
     agreement.status = 'Canceled';
+    agreement.vaultBalance = 0;
     await agreement.save();
 
     return res.status(200).json({ 
-      message: 'Agreement canceled successfully', 
+      message: 'Agreement canceled and funds withdrawn successfully', 
       agreement 
     });
   } catch (error: any) {
@@ -180,10 +187,14 @@ router.post('/create-agreement', async (req: Request, res: Response) => {
       contractID,
       terms,
       createdBy,
-      status: 'Created'
+      status: 'Created',
+      vaultBalance: 0,
+      createdAt: new Date(),
+      updatedAt: new Date()
     });
 
     await newAgreement.save();
+    console.log(newAgreement);
 
     return res.status(201).json({ 
       message: 'Agreement created successfully', 

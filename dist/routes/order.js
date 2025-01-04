@@ -1,13 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -20,23 +11,23 @@ const router = express_1.default.Router();
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 // Ensure SECRET_KEY is defined with a fallback or throw an error if not provided
 exports.SECRET_KEY = process.env.SECRET_KEY || 'your_default_secret_key';
-router.get('/orders', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.get('/orders', async (req, res) => {
     res.header("Access-Control-Allow-Origin", '*');
     res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
     res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
     res.header('Content-Type', 'application/json');
     try {
-        const orders = yield order_1.OrderModel.find();
+        const orders = await order_1.OrderModel.find();
         res.json(orders);
     }
     catch (error) {
         res.status(500).json({ message: 'Error fetching orders' });
     }
-}));
-router.get('/orders/:orderId', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+});
+router.get('/orders/:orderId', async (req, res) => {
     const orderId = req.params.orderId;
     try {
-        const order = yield order_1.OrderModel.findById(orderId);
+        const order = await order_1.OrderModel.findById(orderId);
         if (!order) {
             return res.status(404).json({ message: 'Order not found' });
         }
@@ -45,13 +36,12 @@ router.get('/orders/:orderId', (req, res) => __awaiter(void 0, void 0, void 0, f
     catch (error) {
         res.status(500).json({ message: 'Error fetching order' });
     }
-}));
-router.post('/order', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
+});
+router.post('/order', async (req, res) => {
     const newOrder = req.body;
     try {
         // Extract the token from the headers
-        const token = (_a = req.header('Authorization')) === null || _a === void 0 ? void 0 : _a.replace('Bearer ', '');
+        const token = req.header('Authorization')?.replace('Bearer ', '');
         if (!token) {
             return res.status(401).json({ message: 'Authentication token missing' });
         }
@@ -59,7 +49,7 @@ router.post('/order', (req, res) => __awaiter(void 0, void 0, void 0, function* 
         const decodedToken = jsonwebtoken_1.default.verify(token, exports.SECRET_KEY); // Using non-null assertion
         const id = decodedToken._id;
         // Find the user by ID
-        const user = yield user_1.User.findOne({ _id: id });
+        const user = await user_1.User.findOne({ _id: id });
         if (!user) {
             return res.status(401).json({ message: 'User not found' });
         }
@@ -72,19 +62,19 @@ router.post('/order', (req, res) => __awaiter(void 0, void 0, void 0, function* 
             return res.status(401).json({ message: 'Buyer email does not match authenticated user' });
         }
         // Create the order
-        const order = yield order_1.OrderModel.create(newOrder);
+        const order = await order_1.OrderModel.create(newOrder);
         res.status(201).json({ message: 'Order created successfully', order });
     }
     catch (error) {
         console.error('Error creating order:', error);
         res.status(400).json({ message: 'Error creating order' });
     }
-}));
-router.patch('/orders/:orderId', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+});
+router.patch('/orders/:orderId', async (req, res) => {
     const orderId = req.params.orderId;
     const updatedOrder = req.body;
     try {
-        const order = yield order_1.OrderModel.findByIdAndUpdate(orderId, updatedOrder, { new: true });
+        const order = await order_1.OrderModel.findByIdAndUpdate(orderId, updatedOrder, { new: true });
         if (!order) {
             return res.status(404).json({ message: 'Order not found' });
         }
@@ -93,15 +83,15 @@ router.patch('/orders/:orderId', (req, res) => __awaiter(void 0, void 0, void 0,
     catch (error) {
         res.status(400).json({ message: 'Error updating order' });
     }
-}));
-router.get('/order/:email', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+});
+router.get('/order/:email', async (req, res) => {
     try {
         const email = req.params.email;
-        const orders = yield order_1.OrderModel.find({ buyerEmail: email }).exec();
+        const orders = await order_1.OrderModel.find({ buyerEmail: email }).exec();
         res.json(orders);
     }
     catch (error) {
         res.status(500).json({ error: 'Internal Server Error' });
     }
-}));
+});
 exports.default = router;

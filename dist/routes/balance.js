@@ -1,13 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -53,7 +44,7 @@ const getServer = (network = 'testnet') => {
     return network === 'mainnet' ? mainnetServer : testnetServer;
 };
 // Route to fetch and return balances
-router.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+router.get('/', async (req, res) => {
     try {
         const { email, network } = req.query; // Add network to query parameters
         // Validate network parameter
@@ -63,7 +54,7 @@ router.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         // Get the appropriate server instance
         const server = getServer(network);
         // Fetch the user from the database
-        const user = yield user_1.User.findOne({ email });
+        const user = await user_1.User.findOne({ email });
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
@@ -75,7 +66,7 @@ router.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         // Create the Stellar keypair from the decrypted private key
         const sourceKeypair = stellar_sdk_1.default.Keypair.fromSecret(decryptedPrivateKey);
         // Load the user's account from the Stellar network
-        const account = yield server.loadAccount(sourceKeypair.publicKey());
+        const account = await server.loadAccount(sourceKeypair.publicKey());
         // Fetch all balances (XLM, USDC, EURC, etc.)
         const balances = account.balances.map((balance) => ({
             asset_code: balance.asset_code || 'XLM',
@@ -93,5 +84,5 @@ router.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         console.error('Error fetching balances:', err.message);
         return res.status(500).json({ error: err.message });
     }
-}));
+});
 exports.default = router;
