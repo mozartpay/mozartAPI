@@ -240,14 +240,16 @@ router.post('/', validateRequest(SwapRequestSchema), async (req: Request, res: R
     }
     debug('Found user', { userId: user._id });
 
-    if (!user.privateKeyXlm) {
-      debug('Private key not found for user', { email });
-      return res.status(400).json({ error: 'Private key not available' });
+    // Get and decrypt the network-specific private key
+    const privateKey = network === 'mainnet' ? user.privateKeyXlmMainnet : user.privateKeyXlmTestnet;
+    if (!privateKey) {
+      debug('Private key not found for user', { email, network });
+      return res.status(400).json({ error: `Private key for ${network} not available` });
     }
 
     // Decrypt the user's private key
     debug('Decrypting private key');
-    const decryptedPrivateKey = decryptPrivateKey(user.privateKeyXlm);
+    const decryptedPrivateKey = decryptPrivateKey(privateKey);
     debug('Decrypted private key');
 
     // Create the Stellar keypair from the decrypted private key

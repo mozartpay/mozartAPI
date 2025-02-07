@@ -21,18 +21,15 @@ import Notification from "./routes/notification";
 import swap from './routes/swap';
 import helmet from 'helmet';
 import connectToDB from './db';
-
-
-
+import sinkCarbon from './routes/sinkCarbon';
+import oracle from './routes/oracle';
 
 require('dotenv').config({ path: '.env.production'});
-
 
 const port = process.env.PORT || '8000';
 const app: Express = express();
 
 app.use(helmet());
-
 
 const allowedOrigins = ['https://mozartpay.com', 'https://www.mozartpay.com', 'http://localhost:3000', 'https://mozart-api-21ea5fd801a8.herokuapp.com', 'http://localhost:5173', 'https://mozart-api-21ea5fd801a8.herokuapp.com/api', 'http://localhost:8000'];
 
@@ -71,7 +68,6 @@ if (process.env.NODE_ENV === 'development') {
 
 connectToDB();
 
-
 runSepOne();
 
 // Default route
@@ -97,7 +93,8 @@ app.use('/api/federation', Federation);
 app.use('/api/notifications', Notification);
 app.use('/api/swap', swap);
 app.use('/api/oas', oas);
-
+app.use('/api/carbon', sinkCarbon);
+app.use('/api/oracle', oracle);
 
 // Start the server
 app.listen(port, () => {

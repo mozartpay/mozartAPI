@@ -17,7 +17,7 @@ const getServer = (network: string = 'testnet'): typeof testnetServer => {
     return network === 'mainnet' ? mainnetServer : testnetServer;
 };
 
-const decryptPrivateKey = (encryptedPrivateKey: string): string => {
+export const decryptPrivateKey = (encryptedPrivateKey: string): string => {
   const encryptionKey = process.env.ENCRYPTION_SECRET_KEY as string;
   try {
     const textParts = encryptedPrivateKey.split(':');
@@ -55,21 +55,30 @@ const decryptPrivateKey = (encryptedPrivateKey: string): string => {
   }
 };
 
+// Asset configuration
+const USDC_ISSUER = 'GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5';
+const USDC_CODE = 'USDC';
+
 // Withdraw route
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const { email, amount, xlmAddress, network = 'testnet' } = req.body;
+    const { email, amount, xlmAddress: destinationAddress, network = 'testnet', assetType = 'XLM' } = req.body;
 
     // Add network validation
     if (network && !['mainnet', 'testnet'].includes(network)) {
       return res.status(400).json({ error: 'Invalid network parameter. Use "mainnet" or "testnet"' });
     }
 
+    // Validate asset type
+    if (!['XLM', 'USDC'].includes(assetType)) {
+      return res.status(400).json({ error: 'Invalid asset type. Use "XLM" or "USDC"' });
+    }
+
     // Get the appropriate server instance
     const server = getServer(network);
 
     // Log the incoming request data
-    console.log('Received withdrawal request:', { email, amount, xlmAddress });
+    console.log('Received withdrawal request:', { email, amount, destinationAddress, assetType });
 
     // Validate amount
     if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
@@ -80,7 +89,7 @@ router.post('/', async (req: Request, res: Response) => {
     const formattedAmount = parseFloat(amount).toFixed(7); // Stellar expects up to 7 decimal places
 
     // Validate the Stellar address
-    if (!StellarSdk.StrKey.isValidEd25519PublicKey(xlmAddress)) {
+    if (!StellarSdk.StrKey.isValidEd25519PublicKey(destinationAddress)) {
       return res.status(400).json({ error: 'Invalid Stellar address' });
     }
 
@@ -90,18 +99,18 @@ router.post('/', async (req: Request, res: Response) => {
       console.log('User not found:', email);
       return res.status(404).json({ error: 'User not found' });
     }
-    console.log('Retrieved privateKeyXlm:', user.privateKeyXlm);
 
-    if (!user.privateKeyXlm) {
-      console.log('Private key not found for user:', email);
-      return res.status(400).json({ error: 'Private key not available' });
+    // Replace the privateKeyXlm check with network-specific check
+    const privateKey = network === 'mainnet' ? user.privateKeyXlmMainnet : user.privateKeyXlmTestnet;
+    if (!privateKey) {
+      console.log(`Private key for ${network} not found for user:`, email);
+      return res.status(400).json({ error: `Private key for ${network} not available` });
     }
 
     // Decrypt the user's private key
-    console.log('Decrypting private key for user:', email);
-
-    const decryptedPrivateKey = decryptPrivateKey(user.privateKeyXlm);
-    console.log('Decrypted private key for user:', email);
+    console.log(`Decrypting ${network} private key for user:`, email);
+    const decryptedPrivateKey = decryptPrivateKey(privateKey);
+    console.log(`Decrypted ${network} private key for user:`, email);
 
     // Create the Stellar keypair from the decrypted private key
     const sourceKeypair = StellarSdk.Keypair.fromSecret(decryptedPrivateKey);
@@ -111,16 +120,44 @@ router.post('/', async (req: Request, res: Response) => {
     const account = await server.loadAccount(sourceKeypair.publicKey());
     console.log('Loaded Stellar account:', account.id);
 
-    // Create a transaction to send XLM to the specified address
-    console.log('Building transaction to send XLM:', { destination: xlmAddress, amount: formattedAmount });
+    // If USDC, check if destination has trustline
+    if (assetType === 'USDC') {
+      try {
+        const destinationAccount = await server.loadAccount(destinationAddress);
+        const hasTrustline = destinationAccount.balances.some(
+          (balance: any) => 
+            balance.asset_type !== 'native' && 
+            balance.asset_code === USDC_CODE && 
+            balance.asset_issuer === USDC_ISSUER
+        );
+        
+        if (!hasTrustline) {
+          return res.status(400).json({ 
+            error: 'Destination account does not have a trustline for USDC' 
+          });
+        }
+      } catch (error) {
+        return res.status(400).json({ 
+          error: 'Failed to verify destination account trustline' 
+        });
+      }
+    }
+
+    // Determine the asset to use
+    const asset = assetType === 'XLM' 
+      ? StellarSdk.Asset.native()
+      : new StellarSdk.Asset(USDC_CODE, USDC_ISSUER);
+
+    // Create a transaction
+    console.log('Building transaction to send', assetType);
     const transaction = new StellarSdk.TransactionBuilder(account, {
       fee: StellarSdk.BASE_FEE,
       networkPassphrase: network === 'mainnet' ? StellarSdk.Networks.PUBLIC : StellarSdk.Networks.TESTNET,
     })
       .addOperation(
         StellarSdk.Operation.payment({
-          destination: xlmAddress,
-          asset: StellarSdk.Asset.native(),
+          destination: destinationAddress,
+          asset: asset,
           amount: formattedAmount,
         })
       )
@@ -144,6 +181,27 @@ router.post('/', async (req: Request, res: Response) => {
   } catch (error) {
     if (error instanceof Error) {
       console.error('Error processing withdrawal:', error.message);
+      
+      // Check for Horizon API error response
+      const horizonError = error as any;
+      if (horizonError.response?.data?.extras?.result_codes) {
+        const resultCodes = horizonError.response.data.extras.result_codes;
+        
+        // Handle specific operation errors
+        if (resultCodes.operations?.includes('op_no_destination')) {
+          return res.status(400).json({ 
+            error: 'Destination account does not exist. The recipient must create a Stellar account before they can receive funds.',
+            details: resultCodes
+          });
+        }
+        
+        // Return the specific error codes for other cases
+        return res.status(400).json({ 
+          error: 'Transaction failed',
+          details: resultCodes
+        });
+      }
+      
       return res.status(500).json({ error: error.message });
     } else {
       console.error('Unexpected error:', error);

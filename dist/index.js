@@ -26,6 +26,8 @@ const notification_1 = __importDefault(require("./routes/notification"));
 const swap_1 = __importDefault(require("./routes/swap"));
 const helmet_1 = __importDefault(require("helmet"));
 const db_1 = __importDefault(require("./db"));
+const sinkCarbon_1 = __importDefault(require("./routes/sinkCarbon"));
+const oracle_1 = __importDefault(require("./routes/oracle"));
 require('dotenv').config({ path: '.env.production' });
 const port = process.env.PORT || '8000';
 const app = (0, express_1.default)();
@@ -87,6 +89,8 @@ app.use('/api/federation', sep0002_1.default);
 app.use('/api/notifications', notification_1.default);
 app.use('/api/swap', swap_1.default);
 app.use('/api/oas', oas_1.default);
+app.use('/api/carbon', sinkCarbon_1.default);
+app.use('/api/oracle', oracle_1.default);
 // Start the server
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);

@@ -100,9 +100,10 @@ router.post('/', async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Receiver does not have a MozartPay account.' });
         }
 
-        // Check if the receiver has a publicKeyXlm
-        if (!receiver.publicKeyXlm) {
-            return res.status(400).json({ error: 'Receiver does not have a publicKeyXlm.' });
+        // Replace publicKeyXlm checks with network-specific checks
+        const receiverPublicKey = network === 'mainnet' ? receiver.publicKeyXlmMainnet : receiver.publicKeyXlmTestnet;
+        if (!receiverPublicKey) {
+            return res.status(400).json({ error: `Receiver does not have a ${network} public key.` });
         }
 
         // Save the transaction in the database
@@ -117,15 +118,21 @@ router.post('/', async (req: Request, res: Response) => {
 
         // Decrypt the sender's private key from the user model
         const sender = await User.findOne({ email: senderEmail });
-        if (!sender || !sender.privateKeyXlm) {
-            return res.status(400).json({ error: 'Sender does not have a valid private key.' });
+        if (!sender) {
+            return res.status(400).json({ error: 'Sender not found' });
         }
-        const decryptedPrivateKey = decryptPrivateKey(sender.privateKeyXlm);
+        
+        // Get and decrypt the network-specific private key
+        const senderPrivateKey = network === 'mainnet' ? sender.privateKeyXlmMainnet : sender.privateKeyXlmTestnet;
+        if (!senderPrivateKey) {
+            return res.status(400).json({ error: `Sender does not have a valid ${network} private key.` });
+        }
+        const decryptedPrivateKey = decryptPrivateKey(senderPrivateKey);
 
-        // Update the transaction call to include network
+        // Update the transaction call
         const transactionResult = await sendStellarTransaction(
             decryptedPrivateKey, 
-            receiver.publicKeyXlm, 
+            receiverPublicKey, 
             amount,
             network
         );

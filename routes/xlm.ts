@@ -84,12 +84,12 @@ router.post('/decrypt', async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        if (!user.privateKeyXlm) {
-            return res.status(400).json({ error: 'Private key not available' });
+        const network = user.preferences.network || 'testnet';
+        const privateKey = network === 'mainnet' ? user.privateKeyXlmMainnet : user.privateKeyXlmTestnet;
+        if (!privateKey) {
+            return res.status(400).json({ error: `Private key for ${network} not available` });
         }
-
-        // Decrypt the private key
-        const decryptedPrivateKey = decryptPrivateKey(user.privateKeyXlm);
+        const decryptedPrivateKey = decryptPrivateKey(privateKey);
 
         // Return the decrypted private key
         return res.json({
@@ -126,12 +126,18 @@ router.post('/', async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        if (existingUser.publicKeyXlm) {
-            console.log('User already has a Stellar account');
-            const account = await waitForAccount(existingUser.publicKeyXlm, network);
+        if (existingUser.publicKeyXlmTestnet && network === 'testnet') {
+            const account = await waitForAccount(existingUser.publicKeyXlmTestnet, network);
             const balance = account.balances.find((b: { asset_type: string; balance: string }) => b.asset_type === 'native')?.balance || '0';
             return res.json({
-                publicKey: existingUser.publicKeyXlm,
+                publicKey: existingUser.publicKeyXlmTestnet,
+                balance: balance,
+            });
+        } else if (existingUser.publicKeyXlmMainnet && network === 'mainnet') {
+            const account = await waitForAccount(existingUser.publicKeyXlmMainnet, network);
+            const balance = account.balances.find((b: { asset_type: string; balance: string }) => b.asset_type === 'native')?.balance || '0';
+            return res.json({
+                publicKey: existingUser.publicKeyXlmMainnet,
                 balance: balance,
             });
         }
@@ -168,8 +174,8 @@ router.post('/', async (req: Request, res: Response) => {
         const updatedUser = await User.findOneAndUpdate(
             { email },
             {
-                publicKeyXlm: pair.publicKey(),
-                privateKeyXlm: encryptedPrivateKey, // Store the encrypted private key
+                [network === 'mainnet' ? 'publicKeyXlmMainnet' : 'publicKeyXlmTestnet']: pair.publicKey(),
+                [network === 'mainnet' ? 'privateKeyXlmMainnet' : 'privateKeyXlmTestnet']: encryptedPrivateKey,
             },
             { new: true } // Return the updated document
         );

@@ -66,12 +66,14 @@ router.post('/', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    if (!user.privateKeyXlm) {
-      return res.status(400).json({ error: 'Private key not available' });
+    // Get and decrypt the network-specific private key
+    const privateKey = network === 'mainnet' ? user.privateKeyXlmMainnet : user.privateKeyXlmTestnet;
+    if (!privateKey) {
+      return res.status(400).json({ error: `Private key for ${network} not available` });
     }
 
     // Decrypt the user's private key
-    const decryptedPrivateKey = decryptPrivateKey(user.privateKeyXlm);
+    const decryptedPrivateKey = decryptPrivateKey(privateKey);
 
     // Create the Stellar keypair from the decrypted private key
     const sourceKeypair = StellarSdk.Keypair.fromSecret(decryptedPrivateKey);

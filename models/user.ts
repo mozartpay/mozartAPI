@@ -6,8 +6,10 @@ interface UserDoc extends mongoose.Document {
   name: string;
   image: string;
   bio: string;
-  publicKeyXlm: string;
-  privateKeyXlm: string;
+  publicKeyXlmTestnet: string;
+  privateKeyXlmTestnet: string;
+  publicKeyXlmMainnet: string;
+  privateKeyXlmMainnet: string;
   balance: string;
   balanceUsd: string;
   balanceEur: string;
@@ -36,8 +38,10 @@ const userSchema = new mongoose.Schema<UserDoc>({
   name: { type: String, required: false },
   image: { type: String },
   bio: { type: String },
-  publicKeyXlm: { type: String },
-  privateKeyXlm: { type: String },
+  publicKeyXlmTestnet: { type: String },
+  privateKeyXlmTestnet: { type: String },
+  publicKeyXlmMainnet: { type: String },
+  privateKeyXlmMainnet: { type: String },
   balance: { type: String },
   balanceUsd: { type: String },
   balanceEur: { type: String },
@@ -52,7 +56,11 @@ const userSchema = new mongoose.Schema<UserDoc>({
   verificationCode: String,
   preferences: {
     currency: { type: String, default: 'USD' },
-    network: { type: String, default: 'XLM' },
+    network: { 
+      type: String, 
+      enum: ['testnet', 'mainnet'],
+      default: 'testnet' 
+    },
     hideBalances: { type: Boolean, default: false }
   },
   createdAt: { type: Date, default: Date.now },

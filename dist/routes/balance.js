@@ -46,23 +46,23 @@ const getServer = (network = 'testnet') => {
 // Route to fetch and return balances
 router.get('/', async (req, res) => {
     try {
-        const { email, network } = req.query; // Add network to query parameters
-        // Validate network parameter
-        if (network && !['mainnet', 'testnet'].includes(network)) {
-            return res.status(400).json({ error: 'Invalid network parameter. Use "mainnet" or "testnet"' });
-        }
-        // Get the appropriate server instance
-        const server = getServer(network);
+        const { email } = req.query;
         // Fetch the user from the database
         const user = await user_1.User.findOne({ email });
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
-        if (!user.privateKeyXlm) {
-            return res.status(400).json({ error: 'Private key not available' });
+        // Use the network from the user model, defaulting to testnet if not specified
+        const network = user.preferences.network || 'testnet';
+        // Get the appropriate server instance
+        const server = getServer(network);
+        // Get and decrypt the network-specific private key
+        const privateKey = network === 'mainnet' ? user.privateKeyXlmMainnet : user.privateKeyXlmTestnet;
+        if (!privateKey) {
+            return res.status(400).json({ error: `Private key for ${network} not available` });
         }
         // Decrypt the user's private key
-        const decryptedPrivateKey = decryptPrivateKey(user.privateKeyXlm);
+        const decryptedPrivateKey = decryptPrivateKey(privateKey);
         // Create the Stellar keypair from the decrypted private key
         const sourceKeypair = stellar_sdk_1.default.Keypair.fromSecret(decryptedPrivateKey);
         // Load the user's account from the Stellar network

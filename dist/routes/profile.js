@@ -119,24 +119,47 @@ router.post('/preferredCurrency', async (req, res) => {
 });
 // Route to update user's preferred network
 router.post('/preferredNetwork', async (req, res) => {
+    console.log("request incoming");
     try {
         const { email, preferredNetwork } = req.body;
         if (!email || !preferredNetwork) {
             return res.status(400).json({ message: 'Email and preferred network are required' });
         }
-        const user = await user_1.User.findOneAndUpdate({ email }, { preferredNetwork }, { new: true });
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+        // Validate network value
+        if (!['testnet', 'mainnet'].includes(preferredNetwork)) {
+            return res.status(400).json({
+                status: 'error',
+                code: 'INVALID_NETWORK',
+                message: 'Network must be either "testnet" or "mainnet"'
+            });
         }
-        console.log('User preferred network updated:', user.preferences.network);
+        const user = await user_1.User.findOneAndUpdate({ email }, { $set: { 'preferences.network': preferredNetwork } }, {
+            new: true,
+            maxTimeMS: 15000
+        });
+        if (!user) {
+            return res.status(404).json({
+                status: 'error',
+                code: 'USER_NOT_FOUND',
+                message: 'User not found'
+            });
+        }
+        console.log(`User ${email} network preference updated to: ${preferredNetwork}`);
         return res.status(200).json({
-            message: 'Preferred network updated successfully',
-            user
+            status: 'success',
+            data: {
+                user
+            },
+            message: `Network preference updated to ${preferredNetwork} successfully`
         });
     }
     catch (error) {
         console.error('Error updating user preferred network:', error);
-        return res.status(500).json({ message: 'Internal server error' });
+        return res.status(500).json({
+            status: 'error',
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Internal server error'
+        });
     }
 });
 // Route to update user's balance visibility setting

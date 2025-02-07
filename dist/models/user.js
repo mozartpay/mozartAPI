@@ -11,8 +11,10 @@ const userSchema = new mongoose_1.default.Schema({
     name: { type: String, required: false },
     image: { type: String },
     bio: { type: String },
-    publicKeyXlm: { type: String },
-    privateKeyXlm: { type: String },
+    publicKeyXlmTestnet: { type: String },
+    privateKeyXlmTestnet: { type: String },
+    publicKeyXlmMainnet: { type: String },
+    privateKeyXlmMainnet: { type: String },
     balance: { type: String },
     balanceUsd: { type: String },
     balanceEur: { type: String },
@@ -27,7 +29,11 @@ const userSchema = new mongoose_1.default.Schema({
     verificationCode: String,
     preferences: {
         currency: { type: String, default: 'USD' },
-        network: { type: String, default: 'XLM' },
+        network: {
+            type: String,
+            enum: ['testnet', 'mainnet'],
+            default: 'testnet'
+        },
         hideBalances: { type: Boolean, default: false }
     },
     createdAt: { type: Date, default: Date.now },
