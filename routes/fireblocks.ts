@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { readFileSync } from 'fs';
 import { Fireblocks, BasePath, TransferPeerPathType } from "@fireblocks/ts-sdk";
-import { config } from './../config';
+import { config } from '../config';
 import { validateApiKey } from '../middleware/auth';
 
 const router = Router();

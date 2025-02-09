@@ -17,8 +17,20 @@ const getServer = (network: string = 'testnet'): typeof testnetServer => {
     return network === 'mainnet' ? mainnetServer : testnetServer;
 };
 
-export const decryptPrivateKey = (encryptedPrivateKey: string): string => {
-  const encryptionKey = process.env.ENCRYPTION_SECRET_KEY as string;
+// Get network-specific encryption key
+const getEncryptionKey = (network: string = 'testnet'): string => {
+  const key = network === 'mainnet' 
+    ? process.env.ENCRYPTION_SECRET_KEY_MAINNET 
+    : process.env.ENCRYPTION_SECRET_KEY_TESTNET;
+  
+  if (!key) {
+    throw new Error(`Encryption key for ${network} not found in environment variables`);
+  }
+  return key;
+};
+
+export const decryptPrivateKey = (encryptedPrivateKey: string, network: string = 'testnet'): string => {
+  const encryptionKey = getEncryptionKey(network);
   try {
     const textParts = encryptedPrivateKey.split(':');
     
@@ -109,7 +121,7 @@ router.post('/', async (req: Request, res: Response) => {
 
     // Decrypt the user's private key
     console.log(`Decrypting ${network} private key for user:`, email);
-    const decryptedPrivateKey = decryptPrivateKey(privateKey);
+    const decryptedPrivateKey = decryptPrivateKey(privateKey, network);
     console.log(`Decrypted ${network} private key for user:`, email);
 
     // Create the Stellar keypair from the decrypted private key
@@ -120,27 +132,32 @@ router.post('/', async (req: Request, res: Response) => {
     const account = await server.loadAccount(sourceKeypair.publicKey());
     console.log('Loaded Stellar account:', account.id);
 
-    // If USDC, check if destination has trustline
-    if (assetType === 'USDC') {
-      try {
+    // Check if destination account exists
+    try {
+        console.log('Verifying destination account exists:', destinationAddress);
         const destinationAccount = await server.loadAccount(destinationAddress);
-        const hasTrustline = destinationAccount.balances.some(
-          (balance: any) => 
-            balance.asset_type !== 'native' && 
-            balance.asset_code === USDC_CODE && 
-            balance.asset_issuer === USDC_ISSUER
-        );
+        console.log('Destination account verified:', destinationAccount.id);
         
-        if (!hasTrustline) {
-          return res.status(400).json({ 
-            error: 'Destination account does not have a trustline for USDC' 
-          });
+        // If USDC, check if destination has trustline
+        if (assetType === 'USDC') {
+            const hasTrustline = destinationAccount.balances.some(
+                (balance: any) => 
+                    balance.asset_type !== 'native' && 
+                    balance.asset_code === USDC_CODE && 
+                    balance.asset_issuer === USDC_ISSUER
+            );
+            
+            if (!hasTrustline) {
+                return res.status(400).json({ 
+                    error: 'Destination account does not have a trustline for USDC' 
+                });
+            }
         }
-      } catch (error) {
+    } catch (error) {
+        console.error('Error verifying destination account:', error);
         return res.status(400).json({ 
-          error: 'Failed to verify destination account trustline' 
+            error: 'Destination account does not exist. The recipient must create a Stellar account before they can receive funds.' 
         });
-      }
     }
 
     // Determine the asset to use

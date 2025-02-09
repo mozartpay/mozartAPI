@@ -1,10 +1,11 @@
 import express, { Request, Response } from 'express';
 import Transaction, { ITransaction } from '../models/ApiTransaction';
 import { NodeMailgun } from 'ts-mailgun';
-import { User } from '../models/user'; // Import the User model
+import { User } from '../models/user'; 
 import StellarSdk from '@stellar/stellar-sdk';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
+import logger, { logRequest, logError } from '../utils/logger';
 
 dotenv.config({ path: '.env.production' });
 
@@ -27,7 +28,6 @@ mailer.init();
 
 const router = express.Router();
 
-// Replace the existing getServer function with this:
 const testnetServer = new StellarSdk.Horizon.Server(process.env.STELLAR_TESTNET_URL as string);
 const mainnetServer = new StellarSdk.Horizon.Server(process.env.STELLAR_MAINNET_URL as string);
 
@@ -36,28 +36,71 @@ const getServer = (network: string = 'testnet'): typeof testnetServer => {
 };
 
 const { TransactionBuilder, Networks, BASE_FEE, Operation, Keypair } = StellarSdk;
-const encryptionKey = process.env.ENCRYPTION_SECRET_KEY as string; // Ensure this is available in your .env file
+
+// Get network-specific encryption key
+const getEncryptionKey = (network: string = 'testnet'): string => {
+    const key = network === 'mainnet' 
+        ? process.env.ENCRYPTION_SECRET_KEY_MAINNET 
+        : process.env.ENCRYPTION_SECRET_KEY_TESTNET;
+    
+    if (!key) {
+        throw new Error(`Encryption key for ${network} not found in environment variables`);
+    }
+    return key;
+};
 
 // Helper function to decrypt private key
-const decryptPrivateKey = (encryptedPrivateKey: string): string => {
-    const textParts = encryptedPrivateKey.split(':');
-    const iv = Buffer.from(textParts.shift()!, 'hex');
-    const encryptedText = Buffer.from(textParts.join(':'), 'hex');
+const decryptPrivateKey = async (encryptedPrivateKey: string, network: string = 'testnet') => {
+    try {
+        logger.debug('Attempting to decrypt private key', {
+            network,
+            keyLength: encryptedPrivateKey.length
+        });
 
-    const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(encryptionKey, 'hex'), iv);
+        const encryptionKey = getEncryptionKey(network);
+        const [iv, encryptedText] = encryptedPrivateKey.split(':');
 
-    let decrypted = Buffer.concat([decipher.update(encryptedText), decipher.final()]);
-    return decrypted.toString('utf8');
+        if (!iv || !encryptedText) {
+            throw new Error('Invalid encrypted key format');
+        }
+
+        const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(encryptionKey, 'hex'), Buffer.from(iv, 'hex'));
+        const decrypted = Buffer.concat([decipher.update(Buffer.from(encryptedText, 'hex')), decipher.final()]);
+        
+        logger.debug('Private key decrypted successfully');
+        return decrypted.toString('utf8');
+    } catch (error) {
+        logger.error('Failed to decrypt private key', {
+            error: error instanceof Error ? error.message : 'Unknown error',
+            network
+        });
+        throw error;
+    }
 };
 
 // Update the sendStellarTransaction helper function
 const sendStellarTransaction = async (senderPrivateKey: string, receiverPublicKey: string, amount: number | string, network: string = 'testnet') => {
     try {
+        logger.info('Initiating Stellar transaction', {
+            receiverPublicKey,
+            amount,
+            network
+        });
+
         const server = getServer(network);
         const senderKeypair = Keypair.fromSecret(senderPrivateKey);
+        
+        logger.debug('Loading sender account', {
+            publicKey: senderKeypair.publicKey()
+        });
+        
         const senderAccount = await server.loadAccount(senderKeypair.publicKey());
-
         const formattedAmount = parseFloat(amount as string).toFixed(7).toString();
+
+        logger.debug('Building transaction', {
+            amount: formattedAmount,
+            networkType: network === 'mainnet' ? 'PUBLIC' : 'TESTNET'
+        });
 
         const transaction = new TransactionBuilder(senderAccount, {
             fee: BASE_FEE,
@@ -72,101 +115,182 @@ const sendStellarTransaction = async (senderPrivateKey: string, receiverPublicKe
             .build();
 
         transaction.sign(senderKeypair);
+        
+        logger.debug('Submitting transaction to network');
         const transactionResult = await server.submitTransaction(transaction);
+        
+        logger.info('Transaction completed successfully', {
+            hash: transactionResult.hash,
+            ledger: transactionResult.ledger
+        });
+        
         return transactionResult;
     } catch (error: any) {
-        console.error('Error signing or submitting the Stellar transaction:', error.response?.data || error);
+        const errorDetails = {
+            message: error.message,
+            response: error.response?.data,
+            status: error.response?.status,
+            network
+        };
+        
+        logger.error('Stellar transaction failed', errorDetails);
         throw new Error('Failed to process the Stellar transaction.');
     }
 };
 
 router.post('/', async (req: Request, res: Response) => {
-    res.header("Access-Control-Allow-Origin", '*');
-    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-    res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
-    res.header('Content-Type', 'application/json');
-
-    const { country, amount, receiverName, receiverEmail, senderEmail, network = 'testnet' } = req.body;
-
-    // Add network validation
-    if (network && !['mainnet', 'testnet'].includes(network)) {
-        return res.status(400).json({ error: 'Invalid network parameter. Use "mainnet" or "testnet"' });
-    }
-
     try {
-        // Check if the receiver has a MozartPay account
-        const receiver = await User.findOne({ email: receiverEmail });
-        if (!receiver) {
-            return res.status(400).json({ error: 'Receiver does not have a MozartPay account.' });
-        }
+        logRequest(req, 'send-money');
+        
+        res.header("Access-Control-Allow-Origin", '*');
+        res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+        res.header("Access-Control-Allow-Headers", 'Origin,X-Requested-With,Content-Type,Accept,content-type,application/json');
+        res.header('Content-Type', 'application/json');
 
-        // Replace publicKeyXlm checks with network-specific checks
-        const receiverPublicKey = network === 'mainnet' ? receiver.publicKeyXlmMainnet : receiver.publicKeyXlmTestnet;
-        if (!receiverPublicKey) {
-            return res.status(400).json({ error: `Receiver does not have a ${network} public key.` });
-        }
+        const { country, amount, receiverName, receiverEmail, senderEmail, network = 'testnet' } = req.body;
 
-        // Save the transaction in the database
-        const newTransaction: ITransaction = new Transaction({
-            senderEmail,
+        logger.info('Processing send money request', {
             country,
             amount,
             receiverName,
             receiverEmail,
+            senderEmail,
+            network
         });
-        await newTransaction.save();
 
-        // Decrypt the sender's private key from the user model
+        // Add network validation
+        if (network && !['mainnet', 'testnet'].includes(network)) {
+            logger.warn('Invalid network parameter received', {
+                network,
+                senderEmail
+            });
+            return res.status(400).json({ error: 'Invalid network parameter. Use "mainnet" or "testnet"' });
+        }
+
+        // Find sender user
+        logger.debug('Looking up sender', { senderEmail });
         const sender = await User.findOne({ email: senderEmail });
-        if (!sender) {
-            return res.status(400).json({ error: 'Sender not found' });
-        }
         
-        // Get and decrypt the network-specific private key
-        const senderPrivateKey = network === 'mainnet' ? sender.privateKeyXlmMainnet : sender.privateKeyXlmTestnet;
-        if (!senderPrivateKey) {
-            return res.status(400).json({ error: `Sender does not have a valid ${network} private key.` });
+        if (!sender) {
+            logger.warn('Sender not found', { senderEmail });
+            return res.status(404).json({ error: 'Sender not found' });
         }
-        const decryptedPrivateKey = decryptPrivateKey(senderPrivateKey);
 
-        // Update the transaction call
-        const transactionResult = await sendStellarTransaction(
-            decryptedPrivateKey, 
-            receiverPublicKey, 
+        // Find or create receiver user
+        logger.debug('Looking up receiver', { receiverEmail });
+        let receiver = await User.findOne({ email: receiverEmail });
+
+        if (!receiver) {
+            logger.info('Creating new receiver account', { receiverEmail });
+            const testnetKeypair = Keypair.random();
+            const mainnetKeypair = Keypair.random();
+            
+            receiver = new User({
+                email: receiverEmail,
+                name: receiverName,
+                publicKeyXlmTestnet: testnetKeypair.publicKey(),
+                privateKeyXlmTestnet: testnetKeypair.secret(),
+                publicKeyXlmMainnet: mainnetKeypair.publicKey(),
+                privateKeyXlmMainnet: mainnetKeypair.secret(),
+            });
+            
+            await receiver.save();
+            logger.info('New receiver account created', {
+                email: receiverEmail,
+                publicKey: receiver.publicKeyXlmTestnet
+            });
+        }
+
+        // Validate Mozart's Stellar public keys are available
+        const mozartPublicKey = network === 'testnet' ? 
+            process.env.STELLAR_PUBLIC_KEY_TESTNET : 
+            process.env.STELLAR_PUBLIC_KEY_MAINNET;
+
+        if (!mozartPublicKey) {
+            logger.error('Mozart Stellar public key not found', { network });
+            return res.status(500).json({ error: 'Internal configuration error' });
+        }
+
+        logger.debug('Using Mozart destination account', { 
+            network,
+            publicKey: mozartPublicKey
+        });
+
+        // Verify the destination account exists
+        try {
+            const server = getServer(network);
+            await server.loadAccount(mozartPublicKey);
+            logger.debug('Mozart destination account verified');
+        } catch (error) {
+            logger.error('Mozart destination account not found on network', {
+                network,
+                publicKey: mozartPublicKey
+            });
+            return res.status(500).json({ 
+                error: 'Destination account not found on network',
+                details: 'The Mozart receiving account has not been created on the network'
+            });
+        }
+
+        // Process the transaction
+        logger.debug('Preparing Stellar transaction');
+        const decryptedPrivateKey = await decryptPrivateKey(
+            network === 'testnet' ? sender.privateKeyXlmTestnet : sender.privateKeyXlmMainnet,
+            network
+        );
+        const stellarResult = await sendStellarTransaction(
+            decryptedPrivateKey,
+            mozartPublicKey,
             amount,
             network
         );
 
-        console.log('Stellar transaction successful:', transactionResult);
+        // Create transaction record
+        logger.debug('Creating transaction record');
+        const transaction = new Transaction({
+            senderEmail,
+            receiverEmail,
+            amount,
+            status: 'completed',
+            transactionHash: stellarResult.hash,
+            network
+        });
+        
+        await transaction.save();
+        logger.info('Transaction record created', {
+            transactionId: transaction._id,
+            hash: stellarResult.hash
+        });
 
-        // Send email notification to receiver
-        mailer
-            .send(receiverEmail, 'You have received a payment - MozartPay', `New Payment Transaction has been sent to your account from ${senderEmail} :<br><br>` +
-                `Date: ${new Date().toUTCString()}<br>` +
-                `Amount: ${amount}<br><br>` +
-                "You're receiving this message because a successful payment request has been sent. If you believe that this payment request is suspicious, please contact us immediately.<br><br>" +
-                "If you're aware of this payment, please disregard this notice.<br><br>" +
-                "Thanks, We will get in touch with you as soon as the payment has been made. <br><br>")
-            .then((result) => console.log('Receiver email sent', result))
-            .catch((error: any) => console.error('Error sending email to receiver: ', error));
+        // Send email notifications
+        try {
+            logger.debug('Sending email notifications');
+            await Promise.all([
+                mailer.send(receiverEmail, 'Payment Received', `You have received ${amount} XLM from ${senderEmail}`),
+                mailer.send(senderEmail, 'Payment Sent', `Your payment of ${amount} XLM to ${receiverEmail} has been sent`)
+            ]);
+            logger.info('Email notifications sent successfully');
+        } catch (emailError) {
+            logger.error('Failed to send email notifications', {
+                error: emailError instanceof Error ? emailError.message : 'Unknown error'
+            });
+            // Continue processing as email failure shouldn't affect transaction
+        }
 
-        // Send email notification to sender
-        mailer
-            .send(senderEmail, 'You have sent a payment - MozartPay', `Your Payment Transaction has been sent successfully to ${receiverEmail} :<br><br>` +
-                `Date: ${new Date().toUTCString()}<br>` +
-                `Amount: ${amount}<br><br>` +
-                "You're receiving this message because a successful payment transaction has been sent from your account. If you believe that this payment request is suspicious, please <a href='https://www.mozartpay.com/forgot_password'>Reset Password</a> immediately.<br><br>" +
-                "If you're aware of this payment, please disregard this notice.<br><br>" +
-                "Thanks,<br><br>")
-            .then((result) => console.log('Sender email sent', result))
-            .catch((error: any) => console.error('Error sending email to sender: ', error));
+        return res.status(200).json({
+            message: 'Transaction completed successfully',
+            transactionHash: stellarResult.hash,
+            amount,
+            receiver: receiverEmail
+        });
 
-        res.status(201).json({ message: 'Transaction processed and email sent successfully.' });
-    } catch (error: any) {
-        console.error('Error processing transaction:', error.message || error);
-        res.status(500).json({ error: 'An error occurred while processing the transaction.' });
+    } catch (error) {
+        logError(error as Error, 'send-money', req);
+        return res.status(500).json({
+            error: 'Failed to process transaction',
+            details: error instanceof Error ? error.message : 'Unknown error'
+        });
     }
 });
 
 export default router;
-

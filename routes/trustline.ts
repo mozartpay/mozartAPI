@@ -17,25 +17,29 @@ const getServer = (network: string = 'testnet'): typeof testnetServer => {
     return network === 'mainnet' ? mainnetServer : testnetServer;
 };
 
-// Decrypt function (same as the one in your previous code)
-const decryptPrivateKey = (encryptedPrivateKey: string): string => {
-  const encryptionKey = process.env.ENCRYPTION_SECRET_KEY as string;
+// Get network-specific encryption key
+const getEncryptionKey = (network: string = 'testnet'): string => {
+  const key = network === 'mainnet' 
+    ? process.env.ENCRYPTION_SECRET_KEY_MAINNET 
+    : process.env.ENCRYPTION_SECRET_KEY_TESTNET;
+  
+  if (!key) {
+    throw new Error(`Encryption key for ${network} not found in environment variables`);
+  }
+  return key;
+};
+
+const decryptPrivateKey = (encryptedPrivateKey: string, network: string = 'testnet'): string => {
+  const encryptionKey = getEncryptionKey(network);
   try {
     const textParts = encryptedPrivateKey.split(':');
-    const iv = textParts[0]; 
-    const encryptedText = textParts[1];
-
-    const ivBuffer = Buffer.from(iv, 'hex');
-    const encryptedTextBuffer = Buffer.from(encryptedText, 'hex');
-
+    const iv = Buffer.from(textParts.shift()!, 'hex');
+    const encryptedText = Buffer.from(textParts.join(':'), 'hex');
     const encryptionKeyBuffer = Buffer.from(encryptionKey, 'hex');
-
-    const decipher = crypto.createDecipheriv('aes-256-cbc', encryptionKeyBuffer, ivBuffer);
-    let decrypted = Buffer.concat([decipher.update(encryptedTextBuffer), decipher.final()]);
-
-    return decrypted.toString('utf8');
+    const decipher = crypto.createDecipheriv('aes-256-cbc', encryptionKeyBuffer, iv);
+    return Buffer.concat([decipher.update(encryptedText), decipher.final()]).toString('utf8');
   } catch (error) {
-    console.error('Failed to decrypt private key:', error);
+    console.error('Error decrypting private key:', error);
     throw new Error('Failed to decrypt private key');
   }
 };
@@ -73,7 +77,7 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     // Decrypt the user's private key
-    const decryptedPrivateKey = decryptPrivateKey(privateKey);
+    const decryptedPrivateKey = decryptPrivateKey(privateKey, network);
 
     // Create the Stellar keypair from the decrypted private key
     const sourceKeypair = StellarSdk.Keypair.fromSecret(decryptedPrivateKey);

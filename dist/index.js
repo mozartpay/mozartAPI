@@ -28,6 +28,9 @@ const helmet_1 = __importDefault(require("helmet"));
 const db_1 = __importDefault(require("./db"));
 const sinkCarbon_1 = __importDefault(require("./routes/sinkCarbon"));
 const oracle_1 = __importDefault(require("./routes/oracle"));
+const soroban_1 = __importDefault(require("./routes/soroban"));
+const cookie_parser_1 = __importDefault(require("cookie-parser"));
+const cookies_1 = __importDefault(require("./routes/cookies"));
 require('dotenv').config({ path: '.env.production' });
 const port = process.env.PORT || '8000';
 const app = (0, express_1.default)();
@@ -45,11 +48,25 @@ app.use((0, cors_1.default)({
     credentials: true,
     methods: 'GET,POST,PUT,DELETE,OPTIONS',
     allowedHeaders: 'Origin,X-Requested-With,Content-Type,Accept,Authorization',
-    optionsSuccessStatus: 200
+    optionsSuccessStatus: 200,
+    exposedHeaders: ['set-cookie']
 }));
+// Configure cookie settings
+app.use((req, res, next) => {
+    res.cookie('cookieName', 'cookieValue', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        path: '/',
+        domain: process.env.NODE_ENV === 'production' ? '.mozartpay.com' : 'localhost'
+    });
+    next();
+});
 // Middleware for parsing JSON requests
 app.use(express_1.default.json());
 app.use(body_parser_1.default.json({ limit: '30mb' }));
+app.use((0, cookie_parser_1.default)());
 const enforceHTTPS = (req, res, next) => {
     if (req.headers['x-forwarded-proto'] !== 'https') {
         return res.redirect(`https://${req.hostname}${req.url}`);
@@ -88,9 +105,11 @@ app.use('/api/xlm', xlm_1.default);
 app.use('/api/federation', sep0002_1.default);
 app.use('/api/notifications', notification_1.default);
 app.use('/api/swap', swap_1.default);
+app.use('/api/soroban', soroban_1.default);
 app.use('/api/oas', oas_1.default);
 app.use('/api/carbon', sinkCarbon_1.default);
 app.use('/api/oracle', oracle_1.default);
+app.use('/api/cookies', cookies_1.default);
 // Start the server
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);

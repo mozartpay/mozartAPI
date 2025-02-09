@@ -23,6 +23,9 @@ import helmet from 'helmet';
 import connectToDB from './db';
 import sinkCarbon from './routes/sinkCarbon';
 import oracle from './routes/oracle';
+import sorobanRouter from './routes/soroban';
+import cookieParser from 'cookie-parser';
+import cookieRoutes from './routes/cookies';
 
 require('dotenv').config({ path: '.env.production'});
 
@@ -40,18 +43,31 @@ app.use(cors({
           } else {
             callback(new Error('Not allowed by CORS'));
           }
-          
         },
         credentials: true,
         methods: 'GET,POST,PUT,DELETE,OPTIONS',
         allowedHeaders: 'Origin,X-Requested-With,Content-Type,Accept,Authorization',
-        optionsSuccessStatus: 200
-        
-      }));
+        optionsSuccessStatus: 200,
+        exposedHeaders: ['set-cookie']
+}));
+
+// Configure cookie settings
+app.use((req: Request, res: Response, next: NextFunction) => {
+  res.cookie('cookieName', 'cookieValue', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    path: '/',
+    domain: process.env.NODE_ENV === 'production' ? '.mozartpay.com' : 'localhost'
+  });
+  next();
+});
 
 // Middleware for parsing JSON requests
 app.use(express.json());
 app.use(bodyParser.json({ limit: '30mb' }));
+app.use(cookieParser());
 const enforceHTTPS = (req: Request, res: Response, next: NextFunction ) => {
   if (req.headers['x-forwarded-proto'] !== 'https') {
     return res.redirect(`https://${req.hostname}${req.url}`);
@@ -92,9 +108,11 @@ app.use('/api/xlm', Xlm);
 app.use('/api/federation', Federation);
 app.use('/api/notifications', Notification);
 app.use('/api/swap', swap);
+app.use('/api/soroban', sorobanRouter);
 app.use('/api/oas', oas);
 app.use('/api/carbon', sinkCarbon);
 app.use('/api/oracle', oracle);
+app.use('/api/cookies', cookieRoutes);
 
 // Start the server
 app.listen(port, () => {

@@ -21,37 +21,50 @@ const router = express.Router();
 const testnetServer = new StellarSdk.Horizon.Server(process.env.STELLAR_TESTNET_URL as string);
 const mainnetServer = new StellarSdk.Horizon.Server(process.env.STELLAR_MAINNET_URL as string);
 
-const getServer = (network: string = 'testnet'): typeof testnetServer => {
+const getServer = (network: string = 'mainnet'): typeof testnetServer => {
     return network === 'mainnet' ? mainnetServer : testnetServer;
 };
 
-const decryptPrivateKey = (encryptedPrivateKey: string): string => {
-  const encryptionKey = process.env.ENCRYPTION_SECRET_KEY as string;
+// Get network-specific encryption key
+const getEncryptionKey = (network: string = 'mainnet'): string => {
+  const key = network === 'mainnet' 
+    ? process.env.ENCRYPTION_SECRET_KEY_MAINNET 
+    : process.env.ENCRYPTION_SECRET_KEY_TESTNET;
+  
+  if (!key) {
+    throw new Error(`Encryption key for ${network} not found in environment variables`);
+  }
+  return key;
+};
+
+const decryptPrivateKey = (encryptedPrivateKey: string, network: string = 'mainnet'): string => {
+  const encryptionKey = getEncryptionKey(network);
   try {
     const textParts = encryptedPrivateKey.split(':');
-    if (textParts.length !== 2) {
-      throw new Error('Invalid encrypted private key format');
-    }
-
-    const iv = textParts[0];
-    const encryptedText = textParts[1];
-    const ivBuffer = Buffer.from(iv, 'hex');
-    const encryptedTextBuffer = Buffer.from(encryptedText, 'hex');
-
-    if (!encryptionKey) {
-      throw new Error('Encryption key is missing');
-    }
+    const iv = Buffer.from(textParts.shift()!, 'hex');
+    const encryptedText = Buffer.from(textParts.join(':'), 'hex');
     const encryptionKeyBuffer = Buffer.from(encryptionKey, 'hex');
-
-    const decipher = crypto.createDecipheriv('aes-256-cbc', encryptionKeyBuffer, ivBuffer);
-    let decrypted = Buffer.concat([decipher.update(encryptedTextBuffer), decipher.final()]);
-
-    return decrypted.toString('utf8');
+    const decipher = crypto.createDecipheriv('aes-256-cbc', encryptionKeyBuffer, iv);
+    return Buffer.concat([decipher.update(encryptedText), decipher.final()]).toString('utf8');
   } catch (error) {
-    console.error('Failed to decrypt private key:', error);
+    console.error('Error decrypting private key:', error);
     throw new Error('Failed to decrypt private key');
   }
 };
+
+// Asset configuration
+const getUsdcIssuer = (network: string = 'mainnet'): string => {
+  const issuer = network === 'mainnet' 
+    ? process.env.CIRCLE_USDC_ISSUER_MAINNET 
+    : process.env.CIRCLE_USDC_ISSUER_TESTNET;
+  
+  if (!issuer) {
+    throw new Error(`USDC issuer for ${network} not found in environment variables`);
+  }
+  return issuer;
+};
+
+const USDC_CODE = 'USDC';
 
 // Validation schemas
 const AssetSchema = z.object({
@@ -72,7 +85,7 @@ const SwapRequestSchema = z.object({
   destinationAsset: AssetSchema,
   amount: z.string().regex(/^\d*\.?\d{0,7}$/),
   memo: z.string().max(28).optional(),
-  network: z.enum(['mainnet', 'testnet']).optional().default('testnet'),
+  network: z.enum(['mainnet', 'testnet']).optional().default('mainnet'),
   slippageTolerance: z.number().min(0.01).max(100).optional().default(2)
 });
 
@@ -86,9 +99,12 @@ const EstimateRequestSchema = z.object({
 });
 
 // Helper function to create Stellar Asset object
-function createStellarAsset(asset: { code: string; issuer?: string }): typeof StellarSdk.Asset {
+function createStellarAsset(asset: { code: string; issuer?: string }, network: string): typeof StellarSdk.Asset {
   if (asset.code.toLowerCase() === 'xlm' || asset.code.toLowerCase() === 'native') {
       return StellarSdk.Asset.native();
+  }
+  if (asset.code === 'USDC') {
+    return new StellarSdk.Asset(USDC_CODE, getUsdcIssuer(network));
   }
   if (!asset.issuer) {
       throw new Error('Issuer is required for non-native assets');
@@ -142,7 +158,7 @@ router.post('/estimate', validateRequest(EstimateRequestSchema), async (req: Req
       sourceAsset,
       destinationAsset, 
       amount, 
-      network = 'testnet',
+      network = 'mainnet',
       sendExact = false
     } = req.body;
 
@@ -150,8 +166,8 @@ router.post('/estimate', validateRequest(EstimateRequestSchema), async (req: Req
     const server = getServer(network);
     
     // Create source and destination assets
-    const srcAsset = createStellarAsset(sourceAsset);
-    const destAsset = createStellarAsset(destinationAsset);
+    const srcAsset = createStellarAsset(sourceAsset, network);
+    const destAsset = createStellarAsset(destinationAsset, network);
 
     // Format amount to 7 decimal places
     const formattedAmount = parseFloat(amount).toFixed(7);
@@ -213,7 +229,7 @@ router.post('/', validateRequest(SwapRequestSchema), async (req: Request, res: R
       destinationAsset, 
       amount, 
       memo, 
-      network = 'testnet',
+      network = 'mainnet',
       slippageTolerance = 2 
     } = req.body;
 
@@ -249,7 +265,7 @@ router.post('/', validateRequest(SwapRequestSchema), async (req: Request, res: R
 
     // Decrypt the user's private key
     debug('Decrypting private key');
-    const decryptedPrivateKey = decryptPrivateKey(privateKey);
+    const decryptedPrivateKey = decryptPrivateKey(privateKey, network);
     debug('Decrypted private key');
 
     // Create the Stellar keypair from the decrypted private key
@@ -257,18 +273,31 @@ router.post('/', validateRequest(SwapRequestSchema), async (req: Request, res: R
 
     // Load the user's account
     debug('Loading account', { publicKey: sourceKeypair.publicKey() });
-    const account = await server.loadAccount(sourceKeypair.publicKey());
+    let account = await server.loadAccount(sourceKeypair.publicKey());
     debug('Account loaded successfully', { 
       sequence: account.sequence,
       balances: account.balances
     });
 
     // Create source and destination assets
-    const srcAsset = createStellarAsset(sourceAsset);
-    const destAsset = createStellarAsset(destinationAsset);
+    const srcAsset = sourceAsset.code === 'USDC' 
+      ? new StellarSdk.Asset(USDC_CODE, getUsdcIssuer(network))
+      : StellarSdk.Asset.native();
+      
+    const destAsset = destinationAsset.code === 'USDC'
+      ? new StellarSdk.Asset(USDC_CODE, getUsdcIssuer(network))
+      : StellarSdk.Asset.native();
+
     debug('Created assets', { 
-      sourceAsset: { code: srcAsset.getCode(), issuer: srcAsset.getIssuer() },
-      destinationAsset: { code: destAsset.getCode(), issuer: destAsset.getIssuer() }
+      sourceAsset: { 
+        code: srcAsset.getCode(), 
+        issuer: srcAsset.isNative() ? 'native' : srcAsset.getIssuer() 
+      },
+      destinationAsset: { 
+        code: destAsset.getCode(), 
+        issuer: destAsset.isNative() ? 'native' : destAsset.getIssuer() 
+      },
+      network
     });
 
     // Check if account has required trustlines
@@ -282,6 +311,10 @@ router.post('/', validateRequest(SwapRequestSchema), async (req: Request, res: R
       });
       await establishTrustline(server, account, srcAsset, sourceKeypair, network);
       debug('Established trustline for source asset');
+      
+      // Reload account after establishing trustline
+      account = await server.loadAccount(sourceKeypair.publicKey());
+      debug('Reloaded account after source trustline');
     }
 
     // Check destination asset trustline
@@ -292,6 +325,10 @@ router.post('/', validateRequest(SwapRequestSchema), async (req: Request, res: R
       });
       await establishTrustline(server, account, destAsset, sourceKeypair, network);
       debug('Established trustline for destination asset');
+      
+      // Reload account after establishing trustline
+      account = await server.loadAccount(sourceKeypair.publicKey());
+      debug('Reloaded account after destination trustline');
     }
 
     // Check if account has sufficient balance for source asset
@@ -356,6 +393,13 @@ router.post('/', validateRequest(SwapRequestSchema), async (req: Request, res: R
     const maxSourceAmount = new BigNumber(sourceAmount)
       .times(1 + slippageTolerance / 100)
       .toFixed(7);
+
+    // Set the network for the SDK
+    StellarSdk.Network.use(
+      network === 'mainnet' 
+        ? new StellarSdk.Network(StellarSdk.Networks.PUBLIC)
+        : new StellarSdk.Network(StellarSdk.Networks.TESTNET)
+    );
 
     // Build the transaction
     const transaction = new StellarSdk.TransactionBuilder(account, {
