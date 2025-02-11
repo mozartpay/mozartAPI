@@ -136,6 +136,11 @@ router.post('/resend-code', async (req, res) => {
         // Update the user's verification code
         user.verificationCode = verificationCode;
         await user.save();
+        // Check if MessageBird API key exists
+        if (!process.env.MESSAGEBIRD_API_KEY) {
+            console.error('MessageBird API key is not configured');
+            return res.status(500).json({ message: 'SMS service configuration error' });
+        }
         // Initialize MessageBird
         const messagebird = (0, messagebird_1.default)(process.env.MESSAGEBIRD_API_KEY);
         // Send the verification code via SMS
@@ -146,7 +151,18 @@ router.post('/resend-code', async (req, res) => {
         }, (err, response) => {
             if (err) {
                 console.error('MessageBird Error:', err);
-                return res.status(500).json({ message: 'Error sending verification code' });
+                // Since we can't rely on MessageBirdError type, we'll need to check the error differently
+                const mbError = err;
+                if (mbError.statusCode === 401 || (mbError.errors && mbError.errors[0]?.code === 2)) {
+                    return res.status(500).json({
+                        message: 'SMS service authentication error',
+                        error: 'Invalid API credentials'
+                    });
+                }
+                return res.status(500).json({
+                    message: 'Error sending verification code',
+                    error: mbError.description || 'SMS service error'
+                });
             }
             res.status(200).json({ message: 'Verification code resent successfully' });
         });
