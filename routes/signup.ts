@@ -136,4 +136,51 @@ router.post('/verify', async (req: Request, res: Response) => {
   }
 });
 
+// Route to resend verification code
+router.post('/resend-code', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    const authHeader = req.headers['authorization'];
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'Authorization token is required' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    
+    // Find the user
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Generate a new verification code
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // Update the user's verification code
+    user.verificationCode = verificationCode;
+    await user.save();
+
+    // Initialize MessageBird
+    const messagebird = initMB(process.env.MESSAGEBIRD_API_KEY!);
+
+    // Send the verification code via SMS
+    messagebird.messages.create({
+      originator: 'Mozart',
+      recipients: [user.number],
+      body: `Your Mozart verification code is: ${verificationCode}`
+    }, (err, response) => {
+      if (err) {
+        console.error('MessageBird Error:', err);
+        return res.status(500).json({ message: 'Error sending verification code' });
+      }
+      res.status(200).json({ message: 'Verification code resent successfully' });
+    });
+
+  } catch (error) {
+    console.error('Error in resend-code route:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 export default router;
