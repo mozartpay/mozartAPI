@@ -77,13 +77,15 @@ router.post('/', async (req: Request, res: Response) => {
     newUser.token = token;
     const savedUser = await newUser.save();
 
-    // Initialize the MessageBird client with API key from environment variables
-    const messagebirdApiKey = process.env.MESSAGEBIRD_API_KEY as string;
-
+    // Get and decrypt MessageBird API key
+    const messagebirdApiKey = process.env.MESSAGEBIRD_API_KEY?.trim();
+    
     if (!messagebirdApiKey) {
-      throw new Error('MessageBird API key is not defined in environment variables.');
+      console.error('MessageBird API key is not defined in environment variables.');
+      return res.status(500).json({ message: 'SMS service configuration error' });
     }
 
+    console.log('Initializing MessageBird with key length:', messagebirdApiKey.length);
     const messagebird = initMB(messagebirdApiKey);
 
     const params = {
@@ -168,14 +170,16 @@ router.post('/resend-code', async (req: Request, res: Response) => {
     user.verificationCode = verificationCode;
     await user.save();
 
-    // Check if MessageBird API key exists
-    if (!process.env.MESSAGEBIRD_API_KEY) {
-      console.error('MessageBird API key is not configured');
+    // Get and decrypt MessageBird API key
+    const messagebirdApiKey = process.env.MESSAGEBIRD_API_KEY?.trim();
+    
+    if (!messagebirdApiKey) {
+      console.error('MessageBird API key is not defined in environment variables.');
       return res.status(500).json({ message: 'SMS service configuration error' });
     }
 
-    // Initialize MessageBird
-    const messagebird = initMB(process.env.MESSAGEBIRD_API_KEY);
+    console.log('Initializing MessageBird with key length:', messagebirdApiKey.length);
+    const messagebird = initMB(messagebirdApiKey);
 
     // Send the verification code via SMS
     messagebird.messages.create({

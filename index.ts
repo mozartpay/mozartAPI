@@ -29,6 +29,11 @@ import cookieRoutes from './routes/cookies';
 
 require('dotenv').config({ path: '.env.production'});
 
+// Debug environment variables
+console.log('Environment:', process.env.NODE_ENV);
+console.log('MessageBird Key exists:', !!process.env.MESSAGEBIRD_API_KEY);
+console.log('MessageBird Key length:', process.env.MESSAGEBIRD_API_KEY?.length || 0);
+
 const port = process.env.PORT || '8000';
 const app: Express = express();
 
