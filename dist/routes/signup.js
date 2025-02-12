@@ -44,7 +44,11 @@ router.post('/', async (req, res) => {
             balanceEur: "0",
             balanceCop: "0",
             verificationCode: verificationCode,
-            preferredNetwork: "https://horizon-testnet.stellar.org",
+            preferences: {
+                currency: 'USD',
+                network: 'testnet',
+                hideBalances: false
+            },
             isPhoneVerified: false,
             isEmailVerified: false,
         });
@@ -58,11 +62,13 @@ router.post('/', async (req, res) => {
         });
         newUser.token = token;
         const savedUser = await newUser.save();
-        // Initialize the MessageBird client with API key from environment variables
-        const messagebirdApiKey = process.env.MESSAGEBIRD_API_KEY;
+        // Get and decrypt MessageBird API key
+        const messagebirdApiKey = process.env.MESSAGEBIRD_API_KEY?.trim();
         if (!messagebirdApiKey) {
-            throw new Error('MessageBird API key is not defined in environment variables.');
+            console.error('MessageBird API key is not defined in environment variables.');
+            return res.status(500).json({ message: 'SMS service configuration error' });
         }
+        console.log('Initializing MessageBird with key length:', messagebirdApiKey.length);
         const messagebird = (0, messagebird_1.default)(messagebirdApiKey);
         const params = {
             originator: 'MozartPay',
@@ -136,13 +142,14 @@ router.post('/resend-code', async (req, res) => {
         // Update the user's verification code
         user.verificationCode = verificationCode;
         await user.save();
-        // Check if MessageBird API key exists
-        if (!process.env.MESSAGEBIRD_API_KEY) {
-            console.error('MessageBird API key is not configured');
+        // Get and decrypt MessageBird API key
+        const messagebirdApiKey = process.env.MESSAGEBIRD_API_KEY?.trim();
+        if (!messagebirdApiKey) {
+            console.error('MessageBird API key is not defined in environment variables.');
             return res.status(500).json({ message: 'SMS service configuration error' });
         }
-        // Initialize MessageBird
-        const messagebird = (0, messagebird_1.default)(process.env.MESSAGEBIRD_API_KEY);
+        console.log('Initializing MessageBird with key length:', messagebirdApiKey.length);
+        const messagebird = (0, messagebird_1.default)(messagebirdApiKey);
         // Send the verification code via SMS
         messagebird.messages.create({
             originator: 'Mozart',

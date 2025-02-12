@@ -32,6 +32,10 @@ const soroban_1 = __importDefault(require("./routes/soroban"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const cookies_1 = __importDefault(require("./routes/cookies"));
 require('dotenv').config({ path: '.env.production' });
+// Debug environment variables
+console.log('Environment:', process.env.NODE_ENV);
+console.log('MessageBird Key exists:', !!process.env.MESSAGEBIRD_API_KEY);
+console.log('MessageBird Key length:', process.env.MESSAGEBIRD_API_KEY?.length || 0);
 const port = process.env.PORT || '8000';
 const app = (0, express_1.default)();
 app.use((0, helmet_1.default)());
@@ -57,7 +61,7 @@ app.use((req, res, next) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        maxAge: 24 * 60 * 60 * 1000,
         path: '/',
         domain: process.env.NODE_ENV === 'production' ? '.mozartpay.com' : 'localhost'
     });
@@ -74,7 +78,7 @@ const enforceHTTPS = (req, res, next) => {
     next();
 };
 // Then use the environment check
-if (process.env.NODE_ENV === 'development') {
+if (process.env.NODE_ENV === 'production') {
     app.use(enforceHTTPS);
     console.log("Running enforceHTTPS");
 }

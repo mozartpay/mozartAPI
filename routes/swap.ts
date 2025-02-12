@@ -69,12 +69,14 @@ const USDC_CODE = 'USDC';
 // Validation schemas
 const AssetSchema = z.object({
   code: z.string(),
-  issuer: z.string().optional()
+  issuer: z.string().nullable().optional()
 }).refine(data => {
-  if (data.code.toLowerCase() !== 'xlm' && data.code.toLowerCase() !== 'native' && !data.issuer) {
-    return false;
+  // Allow missing or null issuer for XLM/native assets
+  if (data.code.toLowerCase() === 'xlm' || data.code.toLowerCase() === 'native') {
+    return true;
   }
-  return true;
+  // Require non-null issuer for all other assets
+  return !!data.issuer;
 }, {
   message: "Issuer is required for non-native assets"
 });
@@ -151,7 +153,15 @@ const hasTrustline = (account: any, asset: typeof StellarSdk.Asset): boolean => 
 
 // Add estimation route before swap execution
 router.post('/estimate', validateRequest(EstimateRequestSchema), async (req: Request, res: Response) => {
-  debug('Received estimation request', { body: req.body });
+  console.log('Estimate request body:', JSON.stringify(req.body, null, 2));
+  debug('Received estimation request', { 
+    body: req.body,
+    sourceAssetType: typeof req.body?.sourceAsset?.code,
+    destAssetType: typeof req.body?.destinationAsset?.code,
+    amountType: typeof req.body?.amount,
+    networkType: typeof req.body?.network,
+    sendExactType: typeof req.body?.sendExact
+  });
   try {
     const { 
       email, 

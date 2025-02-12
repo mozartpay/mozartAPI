@@ -7,7 +7,7 @@ exports.User = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const userSchema = new mongoose_1.default.Schema({
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    password: { type: String, required: true, select: false },
     name: { type: String, required: false },
     image: { type: String },
     bio: { type: String },
@@ -28,19 +28,26 @@ const userSchema = new mongoose_1.default.Schema({
     number: String,
     verificationCode: String,
     preferences: {
-        currency: { type: String, default: 'USD' },
-        network: {
-            type: String,
-            enum: ['testnet', 'mainnet'],
-            default: 'testnet'
+        type: {
+            currency: { type: String, default: 'USD' },
+            network: {
+                type: String,
+                enum: ['testnet', 'mainnet'],
+                default: 'testnet'
+            },
+            hideBalances: { type: Boolean, default: false }
         },
-        hideBalances: { type: Boolean, default: false }
+        default: {
+            currency: 'USD',
+            network: 'testnet',
+            hideBalances: false
+        }
     },
     createdAt: { type: Date, default: Date.now },
     isPhoneVerified: {
         type: Boolean,
         default: false
     },
-    lastLogin: { type: Date },
+    lastLogin: { type: Date }
 });
 exports.User = mongoose_1.default.model('User', userSchema);
