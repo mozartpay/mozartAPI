@@ -82,6 +82,15 @@ const AssetSchema = z.object({
   message: "Issuer is required for non-native assets"
 });
 
+const EstimateRequestSchema = z.object({
+  email: z.string().email(),
+  sourceAsset: AssetSchema,
+  destinationAsset: AssetSchema,
+  amount: z.string(),
+  network: z.enum(['testnet', 'mainnet']),
+  sendExact: z.boolean()
+});
+
 const SwapRequestSchema = z.object({
   email: z.string().email(),
   sourceAsset: AssetSchema,
@@ -90,15 +99,6 @@ const SwapRequestSchema = z.object({
   memo: z.string().max(28).optional(),
   network: z.enum(['mainnet', 'testnet']).optional().default('mainnet'),
   slippageTolerance: z.number().min(0.01).max(100).optional().default(2)
-});
-
-const EstimateRequestSchema = z.object({
-  email: z.string().email(),
-  sourceAsset: AssetSchema,
-  destinationAsset: AssetSchema,
-  amount: z.string(),
-  network: z.enum(['testnet', 'mainnet']),
-  sendExact: z.boolean()
 });
 
 // Helper function to create Stellar Asset object
@@ -154,17 +154,13 @@ const hasTrustline = (account: any, asset: typeof StellarSdk.Asset): boolean => 
 
 // Add estimation route before swap execution
 router.post('/estimate', validateRequest(EstimateRequestSchema), async (req: Request, res: Response) => {
-  console.log('Estimate request body:', JSON.stringify(req.body, null, 2));
-  debug('Received estimation request', { 
-    body: req.body,
-    sourceAssetType: typeof req.body?.sourceAsset?.code,
-    destAssetType: typeof req.body?.destinationAsset?.code,
-    amountType: typeof req.body?.amount,
-    networkType: typeof req.body?.network,
-    sendExactType: typeof req.body?.sendExact
-  });
-  
   try {
+    console.log('Estimate request body:', JSON.stringify(req.body, null, 2));
+    
+    if (!req.body) {
+      throw new Error('Request body is missing');
+    }
+
     const { 
       email, 
       sourceAsset,
@@ -173,6 +169,15 @@ router.post('/estimate', validateRequest(EstimateRequestSchema), async (req: Req
       network = 'mainnet',
       sendExact = false
     } = req.body;
+
+    debug('Received estimation request', { 
+      email,
+      sourceAsset,
+      destinationAsset,
+      amount,
+      network,
+      sendExact
+    });
 
     debug('Processing path payment estimation', {
       sourceAsset,

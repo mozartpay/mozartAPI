@@ -78,7 +78,7 @@ const enforceHTTPS = (req, res, next) => {
     next();
 };
 // Then use the environment check
-if (process.env.NODE_ENV === 'production') {
+if (process.env.NODE_ENV === 'development') {
     app.use(enforceHTTPS);
     console.log("Running enforceHTTPS");
 }
