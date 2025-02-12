@@ -144,10 +144,18 @@ async function establishTrustline(
 
 // Helper function to check if trustline exists
 const hasTrustline = (account: any, asset: typeof StellarSdk.Asset): boolean => {
-  if (asset.isNative()) return true; // XLM doesn't need trustline
+  if (!account || !account.balances || !Array.isArray(account.balances)) {
+    return false;
+  }
+
+  // Native asset (XLM) always has a trustline
+  if (asset.isNative()) {
+    return true;
+  }
+
   return account.balances.some((balance: any) => 
-    balance.asset_type !== 'native' &&
-    balance.asset_code === asset.getCode() &&
+    balance.asset_type !== 'native' && 
+    balance.asset_code === asset.getCode() && 
     balance.asset_issuer === asset.getIssuer()
   );
 };
@@ -340,11 +348,20 @@ router.post('/', validateRequest(SwapRequestSchema), async (req: Request, res: R
 
     // Load the user's account
     debug('Loading account', { publicKey: sourceKeypair.publicKey() });
-    let account = await server.loadAccount(sourceKeypair.publicKey());
-    debug('Account loaded successfully', { 
-      sequence: account.sequence,
-      balances: account.balances
-    });
+    let account;
+    try {
+      account = await server.loadAccount(sourceKeypair.publicKey());
+      debug('Account loaded successfully', { 
+        sequence: account.sequence,
+        balances: account.balances
+      });
+    } catch (error) {
+      debug('Error loading account', {
+        error: error instanceof Error ? error.message : String(error),
+        publicKey: sourceKeypair.publicKey()
+      });
+      return res.status(400).json({ error: 'Failed to load Stellar account' });
+    }
 
     // Create source and destination assets
     const srcAsset = sourceAsset.code === 'USDC' 
@@ -368,20 +385,30 @@ router.post('/', validateRequest(SwapRequestSchema), async (req: Request, res: R
     });
 
     // Check if account has required trustlines
-    const accountBalances = account.balances;
-    
+    if (!account.balances) {
+      debug('Account has no balances');
+      return res.status(400).json({ error: 'Account has no balances' });
+    }
+
     // Check source asset trustline
     if (!hasTrustline(account, srcAsset)) {
       debug('No trustline for source asset', {
         asset: srcAsset.getCode(),
         issuer: srcAsset.getIssuer()
       });
-      await establishTrustline(server, account, srcAsset, sourceKeypair, network);
-      debug('Established trustline for source asset');
-      
-      // Reload account after establishing trustline
-      account = await server.loadAccount(sourceKeypair.publicKey());
-      debug('Reloaded account after source trustline');
+      try {
+        await establishTrustline(server, account, srcAsset, sourceKeypair, network);
+        debug('Established trustline for source asset');
+        
+        // Reload account after establishing trustline
+        account = await server.loadAccount(sourceKeypair.publicKey());
+        debug('Reloaded account after source trustline');
+      } catch (error) {
+        debug('Error establishing source asset trustline', {
+          error: error instanceof Error ? error.message : String(error)
+        });
+        return res.status(400).json({ error: 'Failed to establish source asset trustline' });
+      }
     }
 
     // Check destination asset trustline
@@ -390,12 +417,19 @@ router.post('/', validateRequest(SwapRequestSchema), async (req: Request, res: R
         asset: destAsset.getCode(),
         issuer: destAsset.getIssuer()
       });
-      await establishTrustline(server, account, destAsset, sourceKeypair, network);
-      debug('Established trustline for destination asset');
-      
-      // Reload account after establishing trustline
-      account = await server.loadAccount(sourceKeypair.publicKey());
-      debug('Reloaded account after destination trustline');
+      try {
+        await establishTrustline(server, account, destAsset, sourceKeypair, network);
+        debug('Established trustline for destination asset');
+        
+        // Reload account after establishing trustline
+        account = await server.loadAccount(sourceKeypair.publicKey());
+        debug('Reloaded account after destination trustline');
+      } catch (error) {
+        debug('Error establishing destination asset trustline', {
+          error: error instanceof Error ? error.message : String(error)
+        });
+        return res.status(400).json({ error: 'Failed to establish destination asset trustline' });
+      }
     }
 
     // Check if account has sufficient balance for source asset
