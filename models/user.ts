@@ -17,11 +17,11 @@ interface UserDoc extends mongoose.Document {
   balanceBtc: string;
   balanceEth: string;
   balanceXlm: string;
-  resetToken:string;
+  resetToken: string;
   resetTokenExpiration: Date;
-  token:string;
-  number:string;
-  verificationCode:string;
+  token: string;
+  number: string;
+  verificationCode: string;
   preferences: {
     currency: string;
     network: string;
@@ -34,7 +34,7 @@ interface UserDoc extends mongoose.Document {
 
 const userSchema = new mongoose.Schema<UserDoc>({
   email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
+  password: { type: String, required: true, select: false },
   name: { type: String, required: false },
   image: { type: String },
   bio: { type: String },
@@ -49,26 +49,33 @@ const userSchema = new mongoose.Schema<UserDoc>({
   balanceBtc: { type: String },
   balanceEth: { type: String },
   balanceXlm: { type: String },
-  resetToken: { type: String},
-  resetTokenExpiration: {type: Date},
+  resetToken: { type: String },
+  resetTokenExpiration: { type: Date },
   token: String,
   number: String,
   verificationCode: String,
   preferences: {
-    currency: { type: String, default: 'USD' },
-    network: { 
-      type: String, 
-      enum: ['testnet', 'mainnet'],
-      default: 'testnet' 
+    type: {
+      currency: { type: String, default: 'USD' },
+      network: { 
+        type: String, 
+        enum: ['testnet', 'mainnet'],
+        default: 'testnet' 
+      },
+      hideBalances: { type: Boolean, default: false }
     },
-    hideBalances: { type: Boolean, default: false }
+    default: {
+      currency: 'USD',
+      network: 'testnet',
+      hideBalances: false
+    }
   },
   createdAt: { type: Date, default: Date.now },
   isPhoneVerified: {
     type: Boolean,
     default: false
   },
-  lastLogin: { type: Date },
+  lastLogin: { type: Date }
 });
 
 export const User = mongoose.model<UserDoc>('User', userSchema);

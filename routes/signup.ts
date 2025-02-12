@@ -58,7 +58,11 @@ router.post('/', async (req: Request, res: Response) => {
       balanceEur: "0",
       balanceCop: "0",
       verificationCode: verificationCode,
-      preferredNetwork: "https://horizon-testnet.stellar.org",
+      preferences: {
+        currency: 'USD',
+        network: 'testnet',
+        hideBalances: false
+      },
       isPhoneVerified: false,
       isEmailVerified: false,
     });

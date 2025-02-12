@@ -67,23 +67,53 @@ router.post('/', async (req: Request, res: Response) => {
     "style-src 'self' 'unsafe-inline';"
   );
 
-  console.log("request")
+  console.log("Signin attempt for email:", req.body.email);
   try {
     const { email, password } = req.body;
+    
+    // Log the search criteria
+    console.log("Searching for user with email:", email);
+    
     const user = await User.findOne({ email })
-      .select('+password +preferences');
+      .select('+password')
+      .lean()
+      .exec();
 
-    if (!user) return res.status(404).json({ message: 'User not found.' });
+    console.log("User found:", user ? "Yes" : "No");
+    
+    if (!user) {
+      console.log("User not found for email:", email);
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    // Log user data (excluding sensitive info)
+    console.log("User data:", {
+      id: user._id,
+      email: user.email,
+      hasPassword: !!user.password,
+      hasPreferences: !!user.preferences
+    });
+
+    if (!user.password) {
+      console.error("Password field is missing for user:", user._id);
+      return res.status(500).json({ message: 'Internal server error - authentication configuration issue' });
+    }
 
     const passwordMatch = await bcrypt.compare(password, user.password);
+    console.log("Password match:", passwordMatch);
+    
     if (!passwordMatch) return res.status(401).json({ message: 'Incorrect password.' });
 
-    user.lastLogin = new Date();
-    await user.save();
+    const updatedUser = await User.findById(user._id);
+    if (!updatedUser) {
+      return res.status(500).json({ message: 'User not found during update' });
+    }
+    updatedUser.lastLogin = new Date();
+    await updatedUser.save();
 
     // Generate JWT
     const token = jwt.sign(
-      { id: user._id, email: user.email },
+      { id: updatedUser._id, email: updatedUser.email },
       process.env.JWT_SECRET as string,
       { expiresIn: '1h' }
     );
@@ -115,8 +145,8 @@ router.post('/', async (req: Request, res: Response) => {
       message: 'Login successful!',
       token,
       user: {
-        ...user.toJSON(),
-        preferences: user.preferences
+        ...updatedUser.toJSON(),
+        preferences: updatedUser.preferences
       }
     });
   } catch (error) {
