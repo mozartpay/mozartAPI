@@ -163,6 +163,7 @@ router.post('/estimate', validateRequest(EstimateRequestSchema), async (req: Req
     networkType: typeof req.body?.network,
     sendExactType: typeof req.body?.sendExact
   });
+  
   try {
     const { 
       email, 
@@ -172,6 +173,14 @@ router.post('/estimate', validateRequest(EstimateRequestSchema), async (req: Req
       network = 'mainnet',
       sendExact = false
     } = req.body;
+
+    debug('Processing path payment estimation', {
+      sourceAsset,
+      destinationAsset,
+      amount,
+      network,
+      sendExact
+    });
 
     // Get the appropriate server instance
     const server = getServer(network);
@@ -183,9 +192,23 @@ router.post('/estimate', validateRequest(EstimateRequestSchema), async (req: Req
     // Format amount to 7 decimal places
     const formattedAmount = parseFloat(amount).toFixed(7);
 
+    debug('Finding paths', {
+      sourceAsset: {
+        code: srcAsset.getCode(),
+        issuer: srcAsset.getIssuer()
+      },
+      destinationAsset: {
+        code: destAsset.getCode(),
+        issuer: destAsset.getIssuer()
+      },
+      amount: formattedAmount,
+      sendExact
+    });
+
     let paths;
     if (sendExact) {
       // User wants to receive exact amount
+      debug('Using strictReceivePaths - user wants to receive exact amount');
       paths = await server.strictReceivePaths(
         [srcAsset],
         destAsset,
@@ -193,6 +216,7 @@ router.post('/estimate', validateRequest(EstimateRequestSchema), async (req: Req
       ).call();
     } else {
       // User wants to send exact amount
+      debug('Using strictSendPaths - user wants to send exact amount');
       paths = await server.strictSendPaths(
         srcAsset,
         formattedAmount,
@@ -200,32 +224,59 @@ router.post('/estimate', validateRequest(EstimateRequestSchema), async (req: Req
       ).call();
     }
 
+    debug('Path finding response', {
+      recordCount: paths.records.length,
+      firstPath: paths.records[0] ? {
+        source_asset_type: paths.records[0].source_asset_type,
+        source_amount: paths.records[0].source_amount,
+        destination_asset_type: paths.records[0].destination_asset_type,
+        destination_amount: paths.records[0].destination_amount,
+        path_length: paths.records[0].path?.length || 0
+      } : null
+    });
+
     if (!paths.records.length) {
       debug('No paths found');
       return res.status(400).json({
-        error: 'No valid path found for the swap'
+        error: 'No valid path found for this swap. This could be due to insufficient liquidity or no valid trading path between the assets.'
       });
     }
 
     // Get the best path (first path is usually the best)
     const bestPath = paths.records[0];
+    const estimatedAmount = sendExact ? bestPath.source_amount : bestPath.destination_amount;
     
+    debug('Found best path', {
+      estimatedAmount,
+      pathDetails: bestPath.path?.map((asset: { asset_type: string; asset_code: string; asset_issuer: string }) => ({
+        asset_type: asset.asset_type,
+        asset_code: asset.asset_code,
+        asset_issuer: asset.asset_issuer
+      }))
+    });
+
     return res.status(200).json({
-      estimated_amount: sendExact ? bestPath.source_amount : bestPath.destination_amount,
-      path: bestPath.path
+      estimated_amount: estimatedAmount,
+      path: bestPath.path,
+      source_amount: bestPath.source_amount,
+      destination_amount: bestPath.destination_amount
     });
 
   } catch (error: unknown) {
     debug('Error processing estimation', { 
       name: error instanceof Error ? error.name : 'Unknown error',
-      message: error instanceof Error ? error.message : String(error)
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : 'No stack trace'
     });
     
-    if (error instanceof Error) {
-      return res.status(500).json({ error: error.message });
-    } else {
-      return res.status(500).json({ error: 'Failed to process estimation' });
-    }
+    const errorMessage = error instanceof Error 
+      ? error.message
+      : 'Failed to process estimation';
+
+    return res.status(500).json({ 
+      error: errorMessage,
+      details: error instanceof Error ? error.stack : undefined
+    });
   }
 });
 
