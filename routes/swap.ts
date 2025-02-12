@@ -71,8 +71,9 @@ const AssetSchema = z.object({
   code: z.string(),
   issuer: z.string().nullable().optional()
 }).refine(data => {
+  const normalizedCode = data.code.toLowerCase();
   // Allow missing or null issuer for XLM/native assets
-  if (data.code.toLowerCase() === 'xlm' || data.code.toLowerCase() === 'native') {
+  if (normalizedCode === 'xlm' || normalizedCode === 'native') {
     return true;
   }
   // Require non-null issuer for all other assets
