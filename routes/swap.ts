@@ -453,24 +453,24 @@ router.post('/', validateRequest(SwapRequestSchema), async (req: Request, res: R
     }
 
     // Calculate available balance considering minimum reserve if source is XLM
-    let availableBalance = parseFloat(sourceBalance.balance);
+    let sourceAvailableBalance = parseFloat(sourceBalance.balance);
     if (srcAsset.isNative()) {
       const minimumBalance = 2.0001; // 2 XLM reserve + 0.0001 transaction fee
-      availableBalance -= minimumBalance;
+      sourceAvailableBalance -= minimumBalance;
     }
     
-    if (parseFloat(formattedAmount) > availableBalance) {
+    if (parseFloat(formattedAmount) > sourceAvailableBalance) {
       debug('Insufficient balance', {
         asset: srcAsset.getCode(),
         required: formattedAmount,
-        available: availableBalance.toFixed(7),
+        available: sourceAvailableBalance.toFixed(7),
         total: sourceBalance.balance
       });
       return res.status(400).json({ 
         error: `Insufficient ${srcAsset.getCode()} balance`,
         details: {
           required: formattedAmount,
-          available: availableBalance.toFixed(7),
+          available: sourceAvailableBalance.toFixed(7),
           total: sourceBalance.balance
         }
       });
@@ -498,58 +498,96 @@ router.post('/', validateRequest(SwapRequestSchema), async (req: Request, res: R
       firstPath: paths.records[0]
     });
 
-    // Calculate the source amount needed with some slippage tolerance
+    // Check if we have sufficient balance
     const sourceAmount = bestPath.source_amount;
     const maxSourceAmount = new BigNumber(sourceAmount)
       .times(1 + slippageTolerance / 100)
       .toFixed(7);
 
+    // Check if the required amount exceeds available balance
+    const nativeBalance = account.balances.find((b: any) => b.asset_type === 'native');
+    if (!nativeBalance) {
+      debug('No native balance found');
+      return res.status(400).json({ error: 'No XLM balance found' });
+    }
+
+    const minimumReserve = 1; // Reserve 1 XLM for minimum balance
+    const nativeAvailableBalance = new BigNumber(nativeBalance.balance)
+      .minus(minimumReserve);
+
+    if (new BigNumber(maxSourceAmount).gt(nativeAvailableBalance)) {
+      debug('Insufficient balance for path payment', {
+        required: maxSourceAmount,
+        available: nativeAvailableBalance.toFixed(7),
+        path: bestPath
+      });
+      return res.status(400).json({
+        error: 'Insufficient balance for path payment',
+        details: {
+          required: maxSourceAmount,
+          available: nativeAvailableBalance.toFixed(7),
+          sourceAsset: 'XLM',
+          destinationAsset: destAsset.getCode()
+        }
+      });
+    }
+
     // Configure the network
     configureNetwork(network);
 
-    // Build the transaction
-    const fee = await server.fetchBaseFee();
-    const transaction = new StellarSdk.TransactionBuilder(account, { 
-      fee,
-      networkPassphrase: network === 'mainnet' ? StellarSdk.Networks.PUBLIC : StellarSdk.Networks.TESTNET
-    })
-    .addOperation(StellarSdk.Operation.pathPaymentStrictReceive({
-      sendAsset: srcAsset,
-      sendMax: maxSourceAmount,
-      destination: sourceKeypair.publicKey(),
-      destAsset: destAsset,
-      destAmount: formattedAmount,
-      path: bestPath.path.map((p: any) => new StellarSdk.Asset(p.asset_code, p.asset_issuer))
-    }))
-    .setTimeout(30)
-    .build();
+    try {
+      // Build the transaction
+      const fee = await server.fetchBaseFee();
+      const transaction = new StellarSdk.TransactionBuilder(account, { 
+        fee,
+        networkPassphrase: network === 'mainnet' ? StellarSdk.Networks.PUBLIC : StellarSdk.Networks.TESTNET
+      })
+      .addOperation(StellarSdk.Operation.pathPaymentStrictReceive({
+        sendAsset: srcAsset,
+        sendMax: maxSourceAmount,
+        destination: sourceKeypair.publicKey(),
+        destAsset: destAsset,
+        destAmount: formattedAmount,
+        path: bestPath.path.map((p: any) => new StellarSdk.Asset(p.asset_code || 'XLM', p.asset_issuer))
+      }))
+      .setTimeout(30)
+      .build();
 
-    debug('Built transaction');
+      // Sign the transaction
+      transaction.sign(sourceKeypair);
 
-    if (memo) {
-      transaction.addMemo(StellarSdk.Memo.text(memo));
+      // Submit the transaction
+      debug('Submitting transaction');
+      try {
+        const result = await server.submitTransaction(transaction);
+        debug('Transaction submitted successfully', { 
+          hash: result.hash,
+          ledger: result.ledger
+        });
+        return res.json({
+          success: true,
+          hash: result.hash,
+          ledger: result.ledger
+        });
+      } catch (submitError: any) {
+        debug('Transaction submission failed', {
+          error: submitError.response?.data?.extras?.result_codes || submitError.message
+        });
+        return res.status(400).json({
+          error: 'Transaction submission failed',
+          details: submitError.response?.data?.extras?.result_codes || submitError.message
+        });
+      }
+    } catch (error: any) {
+      debug('Error building or signing transaction', {
+        error: error.message,
+        stack: error.stack
+      });
+      return res.status(500).json({
+        error: 'Error building or signing transaction',
+        details: error.message
+      });
     }
-
-    // Sign the transaction
-    transaction.sign(sourceKeypair);
-
-    // Submit the transaction
-    debug('Submitting transaction');
-    const result = await server.submitTransaction(transaction);
-
-    debug('Transaction submitted successfully', { 
-      hash: result.hash,
-      ledger: result.ledger
-    });
-
-    return res.status(200).json({ 
-      message: 'Swap successful', 
-      result,
-      estimated_destination_amount: bestPath.destination_amount,
-      minimum_destination_amount: formattedAmount,
-      path: bestPath.path
-    });
-
   } catch (error: unknown) {
     debug('Error processing swap', { 
       name: error instanceof Error ? error.name : 'Unknown error',
