@@ -17,6 +17,15 @@ const debug = (message: string, data?: any) => {
 
 const router = express.Router();
 
+// Configure the network once at startup
+const configureNetwork = (network: string = 'mainnet') => {
+  if (network === 'mainnet') {
+    StellarSdk.Networks.PUBLIC;
+  } else {
+    StellarSdk.Networks.TESTNET;
+  }
+};
+
 // Static server instances
 const testnetServer = new StellarSdk.Horizon.Server(process.env.STELLAR_TESTNET_URL as string);
 const mainnetServer = new StellarSdk.Horizon.Server(process.env.STELLAR_MAINNET_URL as string);
@@ -495,32 +504,25 @@ router.post('/', validateRequest(SwapRequestSchema), async (req: Request, res: R
       .times(1 + slippageTolerance / 100)
       .toFixed(7);
 
-    // Set the network for the SDK
-    StellarSdk.Network.use(
-      network === 'mainnet' 
-        ? new StellarSdk.Network(StellarSdk.Networks.PUBLIC)
-        : new StellarSdk.Network(StellarSdk.Networks.TESTNET)
-    );
+    // Configure the network
+    configureNetwork(network);
 
     // Build the transaction
-    const transaction = new StellarSdk.TransactionBuilder(account, {
-      fee: StellarSdk.BASE_FEE,
-      networkPassphrase: network === 'mainnet' ? StellarSdk.Networks.PUBLIC : StellarSdk.Networks.TESTNET,
+    const fee = await server.fetchBaseFee();
+    const transaction = new StellarSdk.TransactionBuilder(account, { 
+      fee,
+      networkPassphrase: network === 'mainnet' ? StellarSdk.Networks.PUBLIC : StellarSdk.Networks.TESTNET
     })
-      .addOperation(
-        StellarSdk.Operation.pathPaymentStrictReceive({
-          sendAsset: srcAsset,
-          sendMax: maxSourceAmount,  // Always use maxSourceAmount for sendMax
-          destination: sourceKeypair.publicKey(),
-          destAsset: destAsset,
-          destAmount: formattedAmount,
-          path: bestPath.path.map((asset: any) => 
-            new StellarSdk.Asset(asset.asset_code || 'XLM', asset.asset_issuer)
-          )
-        })
-      )
-      .setTimeout(30)
-      .build();
+    .addOperation(StellarSdk.Operation.pathPaymentStrictReceive({
+      sendAsset: srcAsset,
+      sendMax: maxSourceAmount,
+      destination: sourceKeypair.publicKey(),
+      destAsset: destAsset,
+      destAmount: formattedAmount,
+      path: bestPath.path.map((p: any) => new StellarSdk.Asset(p.asset_code, p.asset_issuer))
+    }))
+    .setTimeout(30)
+    .build();
 
     debug('Built transaction');
 
@@ -528,9 +530,10 @@ router.post('/', validateRequest(SwapRequestSchema), async (req: Request, res: R
       transaction.addMemo(StellarSdk.Memo.text(memo));
     }
 
-    // Sign and submit the transaction
-    debug('Signing transaction');
+    // Sign the transaction
     transaction.sign(sourceKeypair);
+
+    // Submit the transaction
     debug('Submitting transaction');
     const result = await server.submitTransaction(transaction);
 
