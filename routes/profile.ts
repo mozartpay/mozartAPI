@@ -13,11 +13,11 @@ app.use(cors({
   credentials: true, // Allow credentials (cookies, authentication headers, etc.)
 }));
 
-// Route to get user by email
+// Update the profile route to handle URL-encoded emails
 router.get('/:email', async (req: Request, res: Response) => {
   console.log('Received request to fetch user profile:', req.params);
   try {
-    const email = req.params.email;
+    const email = decodeURIComponent(req.params.email);
 
     // Input validation
     if (!email) {
@@ -29,7 +29,7 @@ router.get('/:email', async (req: Request, res: Response) => {
       });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.toLowerCase() });
 
     if (!user) {
       console.log('User not found for email:', email);
@@ -40,11 +40,22 @@ router.get('/:email', async (req: Request, res: Response) => {
       });
     }
 
+    // Remove sensitive fields
+    const userResponse = {
+      email: user.email,
+      name: user.name,
+      image: user.image,
+      bio: user.bio,
+      preferences: user.preferences,
+      isPhoneVerified: user.isPhoneVerified,
+      createdAt: user.createdAt
+    };
+
     console.log(`Successfully retrieved user profile for ${email}`);
     res.status(200).json({
       status: 'success',
       data: {
-        user
+        user: userResponse
       }
     });
   } catch (error: any) {

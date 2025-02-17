@@ -10,16 +10,16 @@ const app = (0, express_1.default)();
 const router = express_1.default.Router();
 // Enable CORS for specific origin and allow credentials
 app.use((0, cors_1.default)({
-    origin: ['http://localhost:3000', 'http://localhost:5173'], // Allow requests from your frontend origin
+    origin: ['http://localhost:3000', 'http://localhost:5173'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin'],
     credentials: true, // Allow credentials (cookies, authentication headers, etc.)
 }));
-// Route to get user by email
+// Update the profile route to handle URL-encoded emails
 router.get('/:email', async (req, res) => {
     console.log('Received request to fetch user profile:', req.params);
     try {
-        const email = req.params.email;
+        const email = decodeURIComponent(req.params.email);
         // Input validation
         if (!email) {
             console.log('Missing email parameter');
@@ -29,7 +29,7 @@ router.get('/:email', async (req, res) => {
                 message: 'Email parameter is required'
             });
         }
-        const user = await user_1.User.findOne({ email });
+        const user = await user_1.User.findOne({ email: email.toLowerCase() });
         if (!user) {
             console.log('User not found for email:', email);
             return res.status(404).json({
@@ -38,11 +38,21 @@ router.get('/:email', async (req, res) => {
                 message: 'User not found'
             });
         }
+        // Remove sensitive fields
+        const userResponse = {
+            email: user.email,
+            name: user.name,
+            image: user.image,
+            bio: user.bio,
+            preferences: user.preferences,
+            isPhoneVerified: user.isPhoneVerified,
+            createdAt: user.createdAt
+        };
         console.log(`Successfully retrieved user profile for ${email}`);
         res.status(200).json({
             status: 'success',
             data: {
-                user
+                user: userResponse
             }
         });
     }

@@ -8,6 +8,8 @@ import dotenv from 'dotenv';
 const router = express.Router();
 dotenv.config({ path: '.env.production' });
 
+router.use(express.json());
+
 export interface CustomRequest extends Request {
   token: string;
 }
@@ -153,21 +155,25 @@ router.post('/verify', async (req: Request, res: Response) => {
 router.post('/resend-code', async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
-    const authHeader = req.headers['authorization'];
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ message: 'Authorization token is required' });
+    if (!email) {
+      return res.status(400).json({ 
+        message: 'Email is required',
+        error: 'MISSING_EMAIL'
+      });
     }
 
-    const token = authHeader.split(' ')[1];
-    
     // Find the user
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.toLowerCase() });
+    
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ 
+        message: 'User not found',
+        error: 'USER_NOT_FOUND'
+      });
     }
 
-    // Generate a new verification code
+    // Generate new verification code
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
     
     // Update the user's verification code
@@ -179,7 +185,10 @@ router.post('/resend-code', async (req: Request, res: Response) => {
     
     if (!messagebirdApiKey) {
       console.error('MessageBird API key is not defined in environment variables.');
-      return res.status(500).json({ message: 'SMS service configuration error' });
+      return res.status(500).json({ 
+        message: 'SMS service configuration error',
+        error: 'SMS_CONFIG_ERROR'
+      });
     }
 
     console.log('Initializing MessageBird with key length:', messagebirdApiKey.length);
@@ -193,25 +202,31 @@ router.post('/resend-code', async (req: Request, res: Response) => {
     }, (err: Error | null, response) => {
       if (err) {
         console.error('MessageBird Error:', err);
-        // Since we can't rely on MessageBirdError type, we'll need to check the error differently
         const mbError = err as any;
         if (mbError.statusCode === 401 || (mbError.errors && mbError.errors[0]?.code === 2)) {
           return res.status(500).json({ 
             message: 'SMS service authentication error',
-            error: 'Invalid API credentials'
+            error: 'SMS_AUTH_ERROR'
           });
         }
         return res.status(500).json({ 
           message: 'Error sending verification code',
-          error: mbError.description || 'SMS service error'
+          error: 'SMS_SEND_ERROR',
+          details: mbError.description || 'SMS service error'
         });
       }
-      res.status(200).json({ message: 'Verification code resent successfully' });
+      res.status(200).json({ 
+        message: 'Verification code resent successfully',
+        status: 'success'
+      });
     });
 
   } catch (error) {
-    console.error('Error in resend-code route:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error('Error in resend-code:', error);
+    res.status(500).json({ 
+      message: 'Internal server error',
+      error: 'INTERNAL_ERROR'
+    });
   }
 });
 

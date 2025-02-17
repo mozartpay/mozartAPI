@@ -43,19 +43,23 @@ app.use(helmet());
 const allowedOrigins = ['https://mozartpay.com', 'https://www.mozartpay.com', 'http://localhost:3000', 'https://mozart-api-21ea5fd801a8.herokuapp.com', 'http://localhost:5173', 'https://mozart-api-21ea5fd801a8.herokuapp.com/api', 'http://localhost:8000'];
 
 app.use(cors({
-        origin: function (origin, callback) {
-          if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-            callback(null, true);
-          } else {
-            callback(new Error('Not allowed by CORS'));
-          }
-        },
-        credentials: true,
-        methods: 'GET,POST,PUT,DELETE,OPTIONS',
-        allowedHeaders: 'Origin,X-Requested-With,Content-Type,Accept,Authorization',
-        optionsSuccessStatus: 200,
-        exposedHeaders: ['set-cookie']
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  exposedHeaders: ['set-cookie'],
+  optionsSuccessStatus: 200
 }));
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // Configure cookie settings
 app.use((req: Request, res: Response, next: NextFunction) => {
@@ -70,10 +74,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-// Middleware for parsing JSON requests
-app.use(express.json());
-app.use(bodyParser.json({ limit: '30mb' }));
-app.use(cookieParser());
 const enforceHTTPS = (req: Request, res: Response, next: NextFunction ) => {
   if (req.headers['x-forwarded-proto'] !== 'https') {
     return res.redirect(`https://${req.hostname}${req.url}`);
@@ -100,8 +100,6 @@ app.get("/", (req: Request, res: Response) => {
 // Define API routes
 app.use('/api', oas);
 app.use('/api', withdraw);
-app.use('/api', signinRouter);
-app.use('/api', signupRouter);
 app.use('/api', order);
 app.use('/api', profile);
 app.use('/api', subscriptionRoutes);
@@ -119,6 +117,8 @@ app.use('/api', sorobanRouter);
 app.use('/api', sinkCarbon);
 app.use('/api', oracle);
 app.use('/api', cookieRoutes);
+app.use('/api/signup', signupRouter);
+app.use('/api/signin', signinRouter);
 
 // Start the server
 app.listen(port, () => {

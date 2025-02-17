@@ -7,7 +7,6 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const oas_1 = __importDefault(require("./routes/oas"));
 const sep0001_1 = __importDefault(require("./routes/SEPs/sep0001"));
-const body_parser_1 = __importDefault(require("body-parser"));
 const withdraw_1 = __importDefault(require("./routes/withdraw"));
 const signin_1 = __importDefault(require("./routes/signin"));
 const signup_1 = __importDefault(require("./routes/signup"));
@@ -50,27 +49,26 @@ app.use((0, cors_1.default)({
         }
     },
     credentials: true,
-    methods: 'GET,POST,PUT,DELETE,OPTIONS',
-    allowedHeaders: 'Origin,X-Requested-With,Content-Type,Accept,Authorization',
-    optionsSuccessStatus: 200,
-    exposedHeaders: ['set-cookie']
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+    exposedHeaders: ['set-cookie'],
+    optionsSuccessStatus: 200
 }));
+app.use(express_1.default.json());
+app.use(express_1.default.urlencoded({ extended: true }));
+app.use((0, cookie_parser_1.default)());
 // Configure cookie settings
 app.use((req, res, next) => {
     res.cookie('cookieName', 'cookieValue', {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        maxAge: 24 * 60 * 60 * 1000,
         path: '/',
         domain: process.env.NODE_ENV === 'production' ? '.mozartpay.com' : 'localhost'
     });
     next();
 });
-// Middleware for parsing JSON requests
-app.use(express_1.default.json());
-app.use(body_parser_1.default.json({ limit: '30mb' }));
-app.use((0, cookie_parser_1.default)());
 const enforceHTTPS = (req, res, next) => {
     if (req.headers['x-forwarded-proto'] !== 'https') {
         return res.redirect(`https://${req.hostname}${req.url}`);
@@ -95,8 +93,6 @@ app.get("/", (req, res) => {
 // Define API routes
 app.use('/api', oas_1.default);
 app.use('/api', withdraw_1.default);
-app.use('/api', signin_1.default);
-app.use('/api', signup_1.default);
 app.use('/api', order_1.default);
 app.use('/api', profile_1.default);
 app.use('/api', subscription_1.default);
@@ -114,6 +110,8 @@ app.use('/api', soroban_1.default);
 app.use('/api', sinkCarbon_1.default);
 app.use('/api', oracle_1.default);
 app.use('/api', cookies_1.default);
+app.use('/api/signup', signup_1.default);
+app.use('/api/signin', signin_1.default);
 // Start the server
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
