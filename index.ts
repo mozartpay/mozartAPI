@@ -26,6 +26,7 @@ import oracle from './routes/oracle';
 import sorobanRouter from './routes/soroban';
 import cookieParser from 'cookie-parser';
 import cookieRoutes from './routes/cookies';
+import fireblocksRouter from './routes/fireblocks';
 
 require('dotenv').config({ path: '.env.production'});
 
@@ -97,27 +98,27 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 // Define API routes
-app.use('/api/withdraw', withdraw);
-app.use('/api/signin', signinRouter);
-app.use('/api/signup', signupRouter);
-app.use('/api/profile', profile);
-app.use('/api/v1', order);
-app.use('/api/subscribe', subscriptionRoutes);
-app.use('/api/convert', Money);
-app.use('/api/send', SendMoney);
-app.use('/api/request', MoneyRequest);
-app.use('/api/identity', Identity);
-app.use('/api/trustline', Trustline);
-app.use('/api/balance', Balance);
-app.use('/api/xlm', Xlm);
-app.use('/api/federation', Federation);
-app.use('/api/notifications', Notification);
-app.use('/api/swap', swap);
-app.use('/api/soroban', sorobanRouter);
-app.use('/api/oas', oas);
-app.use('/api/carbon', sinkCarbon);
-app.use('/api/oracle', oracle);
-app.use('/api/cookies', cookieRoutes);
+app.use('/api', oas);
+app.use('/api', withdraw);
+app.use('/api', signinRouter);
+app.use('/api', signupRouter);
+app.use('/api', order);
+app.use('/api', profile);
+app.use('/api', subscriptionRoutes);
+app.use('/api', Money);
+app.use('/api', SendMoney);
+app.use('/api', MoneyRequest);
+app.use('/api', Identity);
+app.use('/api', Trustline);
+app.use('/api', Balance);
+app.use('/api', Xlm);
+app.use('/api', Notification);
+app.use('/api', swap);
+app.use('/api', fireblocksRouter);
+app.use('/api', sorobanRouter);
+app.use('/api', sinkCarbon);
+app.use('/api', oracle);
+app.use('/api', cookieRoutes);
 
 // Start the server
 app.listen(port, () => {

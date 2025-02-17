@@ -6,7 +6,7 @@
     "outDir": "./dist",
     "moduleResolution": "Node",                                           
     "typeRoots": ["./@types", "./node_modules/@types"],                                 
-    "types": [],      
+    "types": ["node"],      
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,            
     "esModuleInterop": true, 
@@ -14,6 +14,6 @@
     "strict": true, 
     "skipLibCheck": true 
   },
-  "include": ["./**/*.ts", "test.js"],
+  "include": ["./**/*.ts", "test.ts"],
   "exclude": ["node_modules", "dist"]
 }

@@ -152,7 +152,7 @@ router.post('/resend-code', async (req, res) => {
         const messagebird = (0, messagebird_1.default)(messagebirdApiKey);
         // Send the verification code via SMS
         messagebird.messages.create({
-            originator: 'Mozart',
+            originator: 'MozartPay',
             recipients: [user.number],
             body: `Your Mozart verification code is: ${verificationCode}`
         }, (err, response) => {

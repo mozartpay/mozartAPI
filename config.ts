@@ -1,8 +1,13 @@
+import dotenv from 'dotenv';
+
+// Load environment variables from .env.production
+dotenv.config({ path: '.env.production' });
+
 // Configuration settings
 export const config = {
     // Add your configuration settings here
     // For example:
-    apiKey: process.env.API_KEY || '',
+    apiKey: process.env.FIREBLOCKS_API_KEY || '',
     fireblocks: {
         apiSecret: process.env.FIREBLOCKS_API_SECRET || '',
         apiKey: process.env.FIREBLOCKS_API_KEY || '',
