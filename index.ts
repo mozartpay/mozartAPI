@@ -101,14 +101,14 @@ app.get("/", (req: Request, res: Response) => {
 app.use('/api', oas);
 app.use('/api', withdraw);
 app.use('/api', order);
-app.use('/api', profile);
+app.use('/api/profile', profile);
 app.use('/api', subscriptionRoutes);
 app.use('/api', Money);
 app.use('/api', SendMoney);
 app.use('/api', MoneyRequest);
 app.use('/api', Identity);
 app.use('/api/stellar/trustline', trustlineRouter);
-app.use('/api', Balance);
+app.use('/api/user/balance', Balance);
 app.use('/api', Xlm);
 app.use('/api', Notification);
 app.use('/api', swap);
