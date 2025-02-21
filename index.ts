@@ -98,7 +98,7 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 // Define API routes
-app.use('/api', oas);
+app.use('/api/oas', oas);
 app.use('/api', withdraw);
 app.use('/api', order);
 app.use('/api/profile', profile);
@@ -109,7 +109,7 @@ app.use('/api', MoneyRequest);
 app.use('/api', Identity);
 app.use('/api/stellar/trustline', trustlineRouter);
 app.use('/api/user/balance', Balance);
-app.use('/api', Xlm);
+app.use('/api/xlm', Xlm);
 app.use('/api', Notification);
 app.use('/api', swap);
 app.use('/api', fireblocksRouter);

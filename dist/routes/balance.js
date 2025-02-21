@@ -51,11 +51,23 @@ const getServer = (network = 'testnet') => {
     return network === 'mainnet' ? mainnetServer : testnetServer;
 };
 // Route to fetch and return balances
-router.get('/', async (req, res) => {
+router.get('/:email', async (req, res) => {
+    console.log('Balance route hit with params:', req.params);
     try {
-        const { email } = req.query;
+        const email = decodeURIComponent(req.params.email);
+        console.log('Decoded email:', email);
+        // Input validation
+        if (!email) {
+            console.log('Missing email parameter');
+            return res.status(400).json({
+                status: 'error',
+                code: 'MISSING_EMAIL',
+                message: 'Email parameter is required'
+            });
+        }
         // Fetch the user from the database
-        const user = await user_1.User.findOne({ email });
+        const user = await user_1.User.findOne({ email: email.toLowerCase() });
+        console.log('User found:', user ? 'Yes' : 'No');
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
@@ -80,16 +92,11 @@ router.get('/', async (req, res) => {
             asset_issuer: balance.asset_issuer || null,
             balance: balance.balance
         }));
-        // Return the balances to the frontend
-        return res.status(200).json({
-            balances,
-            publicKey: account.id, // Return public key
-        });
+        return res.json({ balances });
     }
     catch (error) {
-        const err = error;
-        console.error('Error fetching balances:', err.message);
-        return res.status(500).json({ error: err.message });
+        console.error('Error fetching balances:', error);
+        return res.status(500).json({ error: 'Internal server error' });
     }
 });
 exports.default = router;
