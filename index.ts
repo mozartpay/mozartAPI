@@ -99,7 +99,7 @@ app.get("/", (req: Request, res: Response) => {
 
 // Define API routes
 app.use('/api/oas', oas);
-app.use('/api', withdraw);
+app.use('/api/withdraw', withdraw);
 app.use('/api', order);
 app.use('/api/profile', profile);
 app.use('/api', subscriptionRoutes);

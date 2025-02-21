@@ -91,8 +91,8 @@ app.get("/", (req, res) => {
     res.send("Hello, Mozart Typescript Node.js server!");
 });
 // Define API routes
-app.use('/api', oas_1.default);
-app.use('/api', withdraw_1.default);
+app.use('/api/oas', oas_1.default);
+app.use('/api/withdraw', withdraw_1.default);
 app.use('/api', order_1.default);
 app.use('/api/profile', profile_1.default);
 app.use('/api', subscription_1.default);
