@@ -88,7 +88,7 @@ router.get('/:email', async (req, res) => {
         const account = await server.loadAccount(sourceKeypair.publicKey());
         // Fetch all balances (XLM, USDC, EURC, etc.)
         const balances = account.balances.map((balance) => ({
-            asset_code: balance.asset_code || 'XLM',
+            asset_code: balance.asset_code || 'XLM', // Default to XLM if no asset_code
             asset_issuer: balance.asset_issuer || null,
             balance: balance.balance
         }));

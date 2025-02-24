@@ -1,0 +1,120 @@
+openapi: 3.0.0
+info:
+  title: Stellar Carbon API
+  version: 1.0.0
+  description: API for interacting with Stellar Carbon
+
+servers:
+  - url: https://api.stellarcarbon.io/test
+    description: Test environment
+  - url: https://api.stellarcarbon.io
+    description: Production environment
+
+paths:
+  /carbon/usd-quote:
+    get:
+      operationId: getUsdQuote
+      summary: Get USD quote for carbon amount
+      parameters:
+        - name: usd_amount
+          in: query
+          required: true
+          schema:
+            type: number
+            format: float
+        - name: carbon_amount
+          in: query
+          schema:
+            type: number
+            format: float
+      responses:
+        '200':
+          description: Successful quote
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  usd_amount:
+                    type: number
+                  carbon_amount:
+                    type: number
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /carbon/sink-carbon:
+    get:
+      operationId: getSinkCarbonXdr
+      summary: Get XDR for carbon sink transaction
+      parameters:
+        - name: funder
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: recipient
+          in: query
+          schema:
+            type: string
+        - name: carbon_amount
+          in: query
+          schema:
+            type: number
+        - name: usdc_amount
+          in: query
+          schema:
+            type: number
+        - name: payment_asset
+          in: query
+          schema:
+            type: string
+            default: USDC
+        - name: vcs_project_id
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful XDR generation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  xdr:
+                    type: string
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+components:
+  schemas:
+    ValidationError:
+      type: object
+      properties:
+        detail:
+          type: array
+          items:
+            type: object
+            properties:
+              loc:
+                type: array
+                items:
+                  type: string
+              msg:
+                type: string
+              type:
+                type: string
+              usd_amount:
+                type: string
+              minimum_amount:
+                type: string
+              carbon_amount:
+                type: string
