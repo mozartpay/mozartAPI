@@ -63,7 +63,7 @@ app.use((req, res, next) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        maxAge: 24 * 60 * 60 * 1000,
         path: '/',
         domain: process.env.NODE_ENV === 'production' ? '.mozartpay.com' : 'localhost'
     });
