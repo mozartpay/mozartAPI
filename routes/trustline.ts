@@ -54,7 +54,12 @@ interface Balance {
 // Route to establish trustlines with USDC and EURC
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const { email, network = 'testnet' } = req.body;
+    const { email, network = 'testnet', currency } = req.body;
+
+    // Validate currency
+    if (!currency || !['USDC', 'EURC'].includes(currency)) {
+      return res.status(400).json({ error: 'Invalid or missing currency. Must be either USDC or EURC' });
+    }
 
     // Add network validation
     if (network && !['mainnet', 'testnet'].includes(network)) {
@@ -94,53 +99,32 @@ router.post('/', async (req: Request, res: Response) => {
       ? 'GC3ZXWQT2T55O3KVLZCGK7QEJQGWYPUK5XVVLPI3VFHPV5WXGEBQBPLS'  // Mainnet
       : 'GAKNDFRRWA3RPWNLTI3G4EBSD3RGNZZOY5WKWYMQ6CQTG3KIEKPYWAYC'; // Testnet
 
-    const usdcAsset = new StellarSdk.Asset('USDC', circleUsdcIssuer);
-    const eurcAsset = new StellarSdk.Asset('EURC', circleEurcIssuer);
+    // Create the requested asset
+    const issuer = currency === 'USDC' ? circleUsdcIssuer : circleEurcIssuer;
+    const asset = new StellarSdk.Asset(currency, issuer);
 
-    // Check if the trustlines already exist
-    const hasUsdcTrustline = account.balances.some((balance: Balance) => 
-      balance.asset_code === 'USDC' && balance.asset_issuer === circleUsdcIssuer
-    );
-    
-    const hasEurcTrustline = account.balances.some((balance: Balance) => 
-      balance.asset_code === 'EURC' && balance.asset_issuer === circleEurcIssuer
+    // Check if the trustline already exists
+    const hasTrustline = account.balances.some((balance: Balance) => 
+      balance.asset_code === currency && balance.asset_issuer === issuer
     );
 
-    // Prepare operations to add missing trustlines
-    const operations = [];
-
-    if (!hasUsdcTrustline) {
-      operations.push(StellarSdk.Operation.changeTrust({
-        asset: usdcAsset, // USDC asset
-      }));
-    }
-
-    if (!hasEurcTrustline) {
-      operations.push(StellarSdk.Operation.changeTrust({
-        asset: eurcAsset, // EURC asset
-      }));
-    }
-
-    // If all trustlines exist, return without making a transaction
-    if (operations.length === 0) {
+    // If trustline exists, return without making a transaction
+    if (hasTrustline) {
       return res.status(200).json({
-        message: 'USDC and EURC trustlines already exist',
-        publicKey: account.id, // Use "publicKey" instead of "account_id"
-        hasUSDCTrustline: true,
-        hasEURCTrustline: true,
+        message: `${currency} trustline already exists`,
+        publicKey: account.id,
+        hasTrustline: true
       });
     }
 
-    // If any trustlines are missing, create a transaction to add them
-    let transactionBuilder = new StellarSdk.TransactionBuilder(account, {
+    // Create transaction for the trustline
+    const transaction = new StellarSdk.TransactionBuilder(account, {
       fee: StellarSdk.BASE_FEE,
       networkPassphrase: network === 'mainnet' ? StellarSdk.Networks.PUBLIC : StellarSdk.Networks.TESTNET,
-    });
-
-    // Add each operation individually
-    operations.forEach(op => transactionBuilder = transactionBuilder.addOperation(op));
-
-    const transaction = transactionBuilder
+    })
+      .addOperation(StellarSdk.Operation.changeTrust({
+        asset: asset,
+      }))
       .setTimeout(30)
       .build();
 
@@ -149,14 +133,12 @@ router.post('/', async (req: Request, res: Response) => {
     const result = await server.submitTransaction(transaction);
 
     return res.status(200).json({
-      message: 'Trustline(s) created successfully',
+      message: `${currency} trustline created successfully`,
       result,
-      publicKey: account.id, // Return "publicKey" instead of "account_id"
-      hasUSDCTrustline: !hasUsdcTrustline,
-      hasEURCTrustline: !hasEurcTrustline,
+      publicKey: account.id,
+      hasTrustline: true
     });
   } catch (error) {
-    // Cast 'error' as 'Error' to access its message property
     const err = error as Error;
     console.error('Error creating trustline:', err.message);
     return res.status(500).json({ error: err.message });
