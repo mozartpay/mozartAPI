@@ -85,13 +85,14 @@ router.post('/', async (req: Request, res: Response) => {
     // Load the user's account from the Stellar network
     const account = await server.loadAccount(sourceKeypair.publicKey());
 
-    // USDC asset details on Stellar testnet
-    const circleUsdcIssuer = process.env.CIRCLE_USDC_ISSUER as string;
-    const circleEurcIssuer = process.env.CIRCLE_EURC_ISSUER as string;
-    
-    if (!circleUsdcIssuer || !circleEurcIssuer) {
-      return res.status(500).json({ error: 'Circle USDC or EURC issuer is not configured in environment' });
-    }
+    // USDC asset details - hardcoded since they are public information
+    const circleUsdcIssuer = network === 'mainnet' 
+      ? 'GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN'  // Mainnet
+      : 'GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5'; // Testnet
+
+    const circleEurcIssuer = network === 'mainnet'
+      ? 'GC3ZXWQT2T55O3KVLZCGK7QEJQGWYPUK5XVVLPI3VFHPV5WXGEBQBPLS'  // Mainnet
+      : 'GAKNDFRRWA3RPWNLTI3G4EBSD3RGNZZOY5WKWYMQ6CQTG3KIEKPYWAYC'; // Testnet
 
     const usdcAsset = new StellarSdk.Asset('USDC', circleUsdcIssuer);
     const eurcAsset = new StellarSdk.Asset('EURC', circleEurcIssuer);
