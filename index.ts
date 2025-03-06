@@ -114,7 +114,7 @@ app.use('/api', Notification);
 app.use('/api', swap);
 app.use('/api', fireblocksRouter);
 app.use('/api', sorobanRouter);
-app.use('/api', sinkCarbon);
+app.use('/api/carbon', sinkCarbon);
 app.use('/api', oracle);
 app.use('/api', cookieRoutes);
 app.use('/api/signup', signupRouter);
