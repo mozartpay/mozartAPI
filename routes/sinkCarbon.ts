@@ -211,7 +211,7 @@ router.post('/sink-carbon/xdr', async (req: Request, res: Response) => {
 
                 console.log(`[${requestId}] 📝 XDR Response:`, xdrResponse);
 
-                if (!xdrResponse || !xdrResponse.xdr) {
+                if (!xdrResponse || !xdrResponse.tx_xdr) {
                     console.log(`[${requestId}] ❌ Invalid XDR Response:`, xdrResponse);
                     throw new Error('Invalid or missing XDR in API response');
                 }
@@ -241,7 +241,7 @@ router.post('/sink-carbon/xdr', async (req: Request, res: Response) => {
                 
                 // Build the transaction from XDR
                 const transaction = TransactionBuilder.fromXDR(
-                    xdrResponse.xdr,
+                    xdrResponse.tx_xdr,
                     networkInfo.isTestnet ? Networks.TESTNET : Networks.PUBLIC
                 );
                 
