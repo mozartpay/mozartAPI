@@ -66,33 +66,35 @@ export class StellarCarbonAPI {
     }
     
     async getSinkCarbonXDR(params: SinkCarbonParams): Promise<SinkCarbonResponse> {
+        console.log('🌱 Requesting XDR with params:', params);
+        
         // Funder goes in query params, rest in body
         const queryParams = new URLSearchParams();
         queryParams.append('funder', params.funder);
         
         // Build request body
-        const body: {
-            carbon_amount: number | undefined;
-            usdc_amount: number | undefined;
-            payment_asset: string | undefined;
-            vcs_project_id: number | undefined;
-            recipient?: string;
-        } = {
-            carbon_amount: params.carbonAmount,
-            usdc_amount: params.usdcAmount,
+        const body = {
+            carbon_amount: params.carbonAmount?.toString(),
+            usdc_amount: params.usdcAmount?.toString(),
             payment_asset: params.paymentAsset,
-            vcs_project_id: params.vcsProjectId
+            vcs_project_id: params.vcsProjectId,
+            recipient: params.recipient
         };
+
+        console.log('📤 Sending request to:', `/carbon/sink-carbon/xdr?${queryParams}`);
+        console.log('📦 Request body:', body);
         
-        if (params.recipient) {
-            body.recipient = params.recipient;
+        try {
+            const response = await this.client.post<SinkCarbonResponse>(
+                `/carbon/sink-carbon/xdr?${queryParams}`,
+                body
+            );
+            console.log('📥 Received response:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('❌ Error getting XDR:', error);
+            throw error;
         }
-        
-        const response = await this.client.post<SinkCarbonResponse>(
-            `/carbon/sink-carbon/xdr?${queryParams}`,
-            body
-        );
-        return response.data;
     }
 
     // Add getter for current network info

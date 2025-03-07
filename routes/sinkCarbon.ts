@@ -199,57 +199,65 @@ router.post('/sink-carbon/xdr', async (req: Request, res: Response) => {
                 usdcAmount: quoteData.usd_amount
             });
 
-            const xdrResponse = await carbonAPI.getSinkCarbonXDR({
-                funder,
-                recipient: recipient || funder,
-                carbonAmount: parseFloat(quoteData.total_carbon),
-                usdcAmount: parseFloat(quoteData.usd_amount),
-                paymentAsset: payment_asset,
-                vcsProjectId: vcs_project_id
-            });
+            try {
+                const xdrResponse = await carbonAPI.getSinkCarbonXDR({
+                    funder,
+                    recipient: recipient || funder,
+                    carbonAmount: parseFloat(quoteData.total_carbon),
+                    usdcAmount: parseFloat(quoteData.usd_amount),
+                    paymentAsset: payment_asset,
+                    vcsProjectId: vcs_project_id
+                });
 
-            // Get the user's private key
-            console.log(`[${requestId}] 🔐 Decrypting private key for user`);
-            const encryptedPrivateKey = networkInfo.isTestnet ? 
-                user.privateKeyXlmTestnet : 
-                user.privateKeyXlmMainnet;
-            
-            if (!encryptedPrivateKey) {
-                throw new Error(`Private key not found for network: ${networkInfo.isTestnet ? 'testnet' : 'mainnet'}`);
+                console.log(`[${requestId}] 📝 XDR Response:`, xdrResponse);
+
+                if (!xdrResponse || !xdrResponse.xdr) {
+                    console.log(`[${requestId}] ❌ Invalid XDR Response:`, xdrResponse);
+                    throw new Error('Invalid or missing XDR in API response');
+                }
+
+                // Get the user's private key
+                console.log(`[${requestId}] 🔐 Decrypting private key for user`);
+                const encryptedPrivateKey = networkInfo.isTestnet ? 
+                    user.privateKeyXlmTestnet : 
+                    user.privateKeyXlmMainnet;
+                
+                if (!encryptedPrivateKey) {
+                    throw new Error(`Private key not found for network: ${networkInfo.isTestnet ? 'testnet' : 'mainnet'}`);
+                }
+
+                const encryptionKey = getEncryptionKey(networkInfo.isTestnet);
+                const privateKey = decryptPrivateKey(encryptedPrivateKey, encryptionKey);
+                const sourceKeypair = Keypair.fromSecret(privateKey);
+
+                // Create Horizon server instance based on network
+                const horizonUrl = networkInfo.isTestnet ? 
+                    'https://horizon-testnet.stellar.org' : 
+                    'https://horizon.stellar.org';
+                const server = new Horizon.Server(horizonUrl);
+
+                // Submit the transaction
+                console.log(`[${requestId}] 🚀 Submitting transaction to Stellar network...`);
+                
+                // Build the transaction from XDR
+                const transaction = TransactionBuilder.fromXDR(
+                    xdrResponse.xdr,
+                    networkInfo.isTestnet ? Networks.TESTNET : Networks.PUBLIC
+                );
+                
+                // Sign and submit
+                transaction.sign(sourceKeypair);
+                const transactionResult = await server.submitTransaction(transaction);
+                console.log(`[${requestId}] ✅ Transaction submitted successfully:`, transactionResult);
+
+                return res.json({
+                    success: true,
+                    transaction: transactionResult
+                });
+            } catch (error) {
+                console.error(`[${requestId}] ❌ Error processing XDR:`, error);
+                throw error;
             }
-
-            const encryptionKey = getEncryptionKey(networkInfo.isTestnet);
-            const privateKey = decryptPrivateKey(encryptedPrivateKey, encryptionKey);
-            const sourceKeypair = Keypair.fromSecret(privateKey);
-
-            // Create Horizon server instance based on network
-            const horizonUrl = networkInfo.isTestnet ? 
-                'https://horizon-testnet.stellar.org' : 
-                'https://horizon.stellar.org';
-            const server = new Horizon.Server(horizonUrl);
-
-            // Submit the transaction
-            console.log(`[${requestId}] 🚀 Submitting transaction to Stellar network...`);
-            
-            if (!xdrResponse.xdr) {
-                throw new Error('No XDR received from API');
-            }
-
-            // Build the transaction from XDR
-            const transaction = TransactionBuilder.fromXDR(
-                xdrResponse.xdr,
-                networkInfo.isTestnet ? Networks.TESTNET : Networks.PUBLIC
-            );
-            
-            // Sign and submit
-            transaction.sign(sourceKeypair);
-            const transactionResult = await server.submitTransaction(transaction);
-            console.log(`[${requestId}] ✅ Transaction submitted successfully:`, transactionResult);
-
-            return res.json({
-                success: true,
-                transaction: transactionResult
-            });
         } catch (error: any) {
             console.log(`[${requestId}] ❌ API Error:`, error);
             return res.status(503).json({
