@@ -78,7 +78,7 @@ export class StellarCarbonAPI {
         if (params.paymentAsset) queryParams.append('payment_asset', params.paymentAsset);
         if (params.vcsProjectId) queryParams.append('vcs_project_id', params.vcsProjectId.toString());
         
-        const response = await this.client.get<SinkCarbonResponse>(`/carbon/sink-carbon?${queryParams}`);
+        const response = await this.client.get<SinkCarbonResponse>(`/sink-carbon/xdr?${queryParams}`);
         return response.data;
     }
 
