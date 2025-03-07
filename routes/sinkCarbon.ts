@@ -190,7 +190,14 @@ router.post('/sink-carbon/xdr', async (req: Request, res: Response) => {
 
             // Get the user's private key
             console.log(`[${requestId}] 🔐 Decrypting private key for user`);
-            const privateKey = await decryptPrivateKey(user.encryptedPrivateKey, user.iv);
+            const privateKey = networkInfo.isTestnet ? 
+                user.privateKeyXlmTestnet : 
+                user.privateKeyXlmMainnet;
+            
+            if (!privateKey) {
+                throw new Error(`Private key not found for network: ${networkInfo.isTestnet ? 'testnet' : 'mainnet'}`);
+            }
+
             const sourceKeypair = Keypair.fromSecret(privateKey);
 
             // Create Horizon server instance based on network
