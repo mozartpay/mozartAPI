@@ -60,8 +60,11 @@ export class StellarCarbonAPI {
     
     async getSinkCarbonXDR(params: SinkCarbonParams): Promise<SinkCarbonResponse> {
         const queryParams = new URLSearchParams();
+        
+        // Required parameter
         queryParams.append('funder', params.funder);
         
+        // Optional parameters
         if (params.recipient) queryParams.append('recipient', params.recipient);
         if (params.carbonAmount) queryParams.append('carbon_amount', params.carbonAmount.toString());
         if (params.usdcAmount) queryParams.append('usdc_amount', params.usdcAmount.toString());

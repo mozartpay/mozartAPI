@@ -118,19 +118,27 @@ router.post('/sink-carbon/xdr', async (req: Request, res: Response) => {
         const { 
             funder, 
             recipient,
-            carbon_amount,
-            usdc_amount,
             payment_asset,
             vcs_project_id,
-            email
+            email,
+            quote  // Add quote from previous request
         } = req.body;
 
-        // Validate required email
-        if (!email) {
-            console.log(`[${requestId}] ❌ Missing email parameter`);
+        // Validate required parameters
+        if (!email || !funder || !payment_asset || !vcs_project_id || !quote) {
+            console.log(`[${requestId}] ❌ Missing required parameters`);
             return res.status(400).json({
-                error: 'Missing required parameter',
-                details: 'Email is required'
+                error: 'Missing required parameters',
+                details: 'Email, funder, payment_asset, vcs_project_id, and quote are required'
+            });
+        }
+
+        // Validate quote data
+        if (!quote.usd_amount || !quote.total_carbon) {
+            console.log(`[${requestId}] ❌ Invalid quote data:`, quote);
+            return res.status(400).json({
+                error: 'Invalid quote data',
+                details: 'Quote must contain usd_amount and total_carbon'
             });
         }
 
@@ -150,47 +158,41 @@ router.post('/sink-carbon/xdr', async (req: Request, res: Response) => {
         // Check if user exists
         const user = await User.findOne({ email: normalizedEmail });
         if (!user) {
-            console.log(`[${requestId}] ❌ User not found for email:`, normalizedEmail);
+            console.log(`[${requestId}] ❌ User not found:`, normalizedEmail);
             return res.status(404).json({
                 error: 'User not found',
                 details: 'No user found with the provided email'
             });
         }
-
         console.log(`[${requestId}] ✅ User found:`, { userId: user._id });
 
         try {
+            console.log(`[${requestId}] 📊 Using quote values:`, {
+                carbonAmount: quote.total_carbon,
+                usdcAmount: quote.usd_amount
+            });
+
             const xdrResponse = await carbonAPI.getSinkCarbonXDR({
                 funder,
-                recipient,
-                carbonAmount: carbon_amount,
-                usdcAmount: usdc_amount,
+                recipient: recipient || funder,
+                carbonAmount: parseFloat(quote.total_carbon),
+                usdcAmount: parseFloat(quote.usd_amount),
                 paymentAsset: payment_asset,
                 vcsProjectId: vcs_project_id
             });
 
-            return res.status(200).json({
-                success: true,
-                xdr: xdrResponse.xdr,
-                user: {
-                    email: normalizedEmail,
-                    userId: user._id
-                }
-            });
-        } catch (error) {
-            const apiError = error as StellarCarbonAPIError;
-            console.error(`[${requestId}] ❌ API Error:`, apiError);
-            
+            return res.json(xdrResponse);
+        } catch (error: any) {
+            console.log(`[${requestId}] ❌ API Error:`, error);
             return res.status(503).json({
-                error: apiError.error,
-                details: apiError.details
+                error: error.error || 'API Error',
+                details: error.details || error.message
             });
         }
     } catch (error) {
         console.error(`[${requestId}] 💥 Internal Error:`, error);
-        return res.status(500).json({
-            error: 'Internal server error while processing carbon sink XDR request',
-            details: error instanceof Error ? error.message : String(error)
+        return res.status(500).json({ 
+            error: 'Internal server error while processing carbon sink request'
         });
     }
 });
