@@ -2,14 +2,34 @@ import express, { Request, Response } from 'express';
 import StellarSdk from '@stellar/stellar-sdk';
 import dotenv from 'dotenv';
 import { User } from '../models/user';
-import { decryptPrivateKey } from './withdraw';
+import crypto from 'crypto';
 import { carbonAPI } from '../api/stellar-carbon/api';
 import { MinimumAmountError, StellarCarbonAPIError } from '../api/stellar-carbon/types';
 
-const { Operation, Networks, StrKey, Keypair, Transaction, Asset, Horizon, BASE_FEE, TransactionBuilder } = StellarSdk;
-
-// Load environment variables
 dotenv.config({ path: '.env.production' });
+
+// Network-specific encryption keys
+const encryptionKeyTestnet = process.env.ENCRYPTION_SECRET_KEY_TESTNET as string;
+const encryptionKeyMainnet = process.env.ENCRYPTION_SECRET_KEY_MAINNET as string;
+
+// Helper function to get the appropriate encryption key based on network
+const getEncryptionKey = (isTestnet: boolean) => {
+    return isTestnet ? encryptionKeyTestnet : encryptionKeyMainnet;
+};
+
+// Decryption function
+const decryptPrivateKey = (encryptedPrivateKey: string, encryptionKey: string): string => {
+    const textParts = encryptedPrivateKey.split(':');
+    const iv = Buffer.from(textParts.shift()!, 'hex');
+    const encryptedText = Buffer.from(textParts.join(':'), 'hex');
+
+    const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(encryptionKey, 'hex'), iv);
+
+    let decrypted = Buffer.concat([decipher.update(encryptedText), decipher.final()]);
+    return decrypted.toString('utf8');
+};
+
+const { Operation, Networks, StrKey, Keypair, Transaction, Asset, Horizon, BASE_FEE, TransactionBuilder } = StellarSdk;
 
 const router = express.Router();
 
@@ -190,14 +210,16 @@ router.post('/sink-carbon/xdr', async (req: Request, res: Response) => {
 
             // Get the user's private key
             console.log(`[${requestId}] 🔐 Decrypting private key for user`);
-            const privateKey = networkInfo.isTestnet ? 
+            const encryptedPrivateKey = networkInfo.isTestnet ? 
                 user.privateKeyXlmTestnet : 
                 user.privateKeyXlmMainnet;
             
-            if (!privateKey) {
+            if (!encryptedPrivateKey) {
                 throw new Error(`Private key not found for network: ${networkInfo.isTestnet ? 'testnet' : 'mainnet'}`);
             }
 
+            const encryptionKey = getEncryptionKey(networkInfo.isTestnet);
+            const privateKey = decryptPrivateKey(encryptedPrivateKey, encryptionKey);
             const sourceKeypair = Keypair.fromSecret(privateKey);
 
             // Create Horizon server instance based on network

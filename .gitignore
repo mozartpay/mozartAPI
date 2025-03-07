@@ -5,3 +5,6 @@ node_modules
 .env.keys
 config.env
 .DS_Store
+
+# windsurf rules
+.windsurfrules
