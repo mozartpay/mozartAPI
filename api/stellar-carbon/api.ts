@@ -12,9 +12,14 @@ export class StellarCarbonAPI {
     private client: AxiosInstance;
     
     constructor(isTestnet: boolean = true) {
-        const baseURL = isTestnet 
-            ? 'https://api.stellarcarbon.io/test'
-            : 'https://api.stellarcarbon.io';
+        const testnetURL = process.env.STELLAR_CARBON_TESTNET_URL;
+        const mainnetURL = process.env.STELLAR_CARBON_MAINNET_URL;
+
+        if (!testnetURL || !mainnetURL) {
+            throw new Error('Stellar Carbon API URLs not configured in environment variables');
+        }
+
+        const baseURL = isTestnet ? testnetURL : mainnetURL;
             
         this.client = axios.create({
             baseURL,
