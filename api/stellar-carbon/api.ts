@@ -15,16 +15,16 @@ export class StellarCarbonAPI {
     
     constructor(isTestnet: boolean = true) {
         this.isTestnet = isTestnet;
-        const testnetURL = process.env.STELLAR_CARBON_TESTNET_URL;
-        const mainnetURL = process.env.STELLAR_CARBON_MAINNET_URL;
+        const testnetURL = process.env.STELLAR_CARBON_TESTNET_URL || 'https://api.stellarcarbon.io/test';
+        const mainnetURL = process.env.STELLAR_CARBON_MAINNET_URL || 'https://api.stellarcarbon.io';
 
         if (!testnetURL || !mainnetURL) {
             throw new Error('Stellar Carbon API URLs not configured in environment variables');
         }
 
-        this.baseURL = isTestnet ? testnetURL : mainnetURL;
+        this.baseURL = this.isTestnet ? testnetURL : mainnetURL;
         console.log(`🌐 Initializing Stellar Carbon API:`, {
-            environment: isTestnet ? 'testnet' : 'mainnet',
+            environment: this.isTestnet ? 'testnet' : 'mainnet',
             baseURL: this.baseURL
         });
             
@@ -86,7 +86,8 @@ export class StellarCarbonAPI {
     public getNetworkInfo() {
         return {
             isTestnet: this.isTestnet,
-            baseURL: this.baseURL
+            baseURL: this.baseURL,
+            network: this.isTestnet ? 'testnet' : 'mainnet'
         };
     }
 }
@@ -95,6 +96,10 @@ export class StellarCarbonAPI {
 const isTestnet = process.env.NODE_ENV !== 'production';
 console.log(`🌍 Creating Stellar Carbon API instance:`, {
     NODE_ENV: process.env.NODE_ENV,
-    isTestnet
+    isTestnet,
+    message: isTestnet 
+        ? '⚠️ Using TESTNET (api.stellarcarbon.io/test)' 
+        : '🚀 Using MAINNET (api.stellarcarbon.io)'
 });
+
 export const carbonAPI = new StellarCarbonAPI(isTestnet);
