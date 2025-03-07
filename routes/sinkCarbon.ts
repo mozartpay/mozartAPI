@@ -231,6 +231,10 @@ router.post('/sink-carbon/xdr', async (req: Request, res: Response) => {
             // Submit the transaction
             console.log(`[${requestId}] 🚀 Submitting transaction to Stellar network...`);
             
+            if (!xdrResponse.xdr) {
+                throw new Error('No XDR received from API');
+            }
+
             // Build the transaction from XDR
             const transaction = TransactionBuilder.fromXDR(
                 xdrResponse.xdr,
