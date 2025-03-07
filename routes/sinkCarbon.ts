@@ -29,7 +29,7 @@ const decryptPrivateKey = (encryptedPrivateKey: string, encryptionKey: string): 
     return decrypted.toString('utf8');
 };
 
-const { Operation, Networks, StrKey, Keypair, Transaction, Asset, Horizon, BASE_FEE, TransactionBuilder } = StellarSdk;
+const { Operation, Networks, StrKey, Keypair, TransactionBuilder, Asset, Horizon, BASE_FEE } = StellarSdk;
 
 const router = express.Router();
 
@@ -230,12 +230,15 @@ router.post('/sink-carbon/xdr', async (req: Request, res: Response) => {
 
             // Submit the transaction
             console.log(`[${requestId}] 🚀 Submitting transaction to Stellar network...`);
-            const transaction = new Transaction(
+            
+            // Build the transaction from XDR
+            const transaction = TransactionBuilder.fromXDR(
                 xdrResponse.xdr,
                 networkInfo.isTestnet ? Networks.TESTNET : Networks.PUBLIC
             );
+            
+            // Sign and submit
             transaction.sign(sourceKeypair);
-
             const transactionResult = await server.submitTransaction(transaction);
             console.log(`[${requestId}] ✅ Transaction submitted successfully:`, transactionResult);
 
