@@ -66,19 +66,32 @@ export class StellarCarbonAPI {
     }
     
     async getSinkCarbonXDR(params: SinkCarbonParams): Promise<SinkCarbonResponse> {
+        // Funder goes in query params, rest in body
         const queryParams = new URLSearchParams();
-        
-        // Required parameter
         queryParams.append('funder', params.funder);
         
-        // Optional parameters
-        if (params.recipient) queryParams.append('recipient', params.recipient);
-        if (params.carbonAmount) queryParams.append('carbon_amount', params.carbonAmount.toString());
-        if (params.usdcAmount) queryParams.append('usdc_amount', params.usdcAmount.toString());
-        if (params.paymentAsset) queryParams.append('payment_asset', params.paymentAsset);
-        if (params.vcsProjectId) queryParams.append('vcs_project_id', params.vcsProjectId.toString());
+        // Build request body
+        const body: {
+            carbon_amount: number | undefined;
+            usdc_amount: number | undefined;
+            payment_asset: string | undefined;
+            vcs_project_id: number | undefined;
+            recipient?: string;
+        } = {
+            carbon_amount: params.carbonAmount,
+            usdc_amount: params.usdcAmount,
+            payment_asset: params.paymentAsset,
+            vcs_project_id: params.vcsProjectId
+        };
         
-        const response = await this.client.get<SinkCarbonResponse>(`/sink-carbon/xdr?${queryParams}`);
+        if (params.recipient) {
+            body.recipient = params.recipient;
+        }
+        
+        const response = await this.client.post<SinkCarbonResponse>(
+            `/carbon/sink-carbon/xdr?${queryParams}`,
+            body
+        );
         return response.data;
     }
 
