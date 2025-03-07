@@ -108,7 +108,10 @@ router.post('/quote', async (req: Request, res: Response) => {
 // Route to get carbon sink transaction XDR
 router.post('/sink-carbon/xdr', async (req: Request, res: Response) => {
     const requestId = Math.random().toString(36).substring(7);
-    console.log(`[${requestId}] 🌱 Carbon Sink XDR Request`);
+    const networkInfo = carbonAPI.getNetworkInfo();
+    
+    console.log(`[${requestId}] 🌱 Carbon Sink XDR Request on ${networkInfo.isTestnet ? 'testnet' : 'mainnet'}`);
+    console.log(`[${requestId}] Network Info:`, networkInfo);
     console.log(`[${requestId}] Headers:`, {
         'content-type': req.headers['content-type']
     });
@@ -121,11 +124,15 @@ router.post('/sink-carbon/xdr', async (req: Request, res: Response) => {
             payment_asset,
             vcs_project_id,
             email,
-            quote  // Add quote from previous request
+            quote,  // Direct quote object
+            quoteResponse  // Full quote response
         } = req.body;
 
+        // Get quote data from either format
+        const quoteData = quote || (quoteResponse?.quote);
+
         // Validate required parameters
-        if (!email || !funder || !payment_asset || !vcs_project_id || !quote) {
+        if (!email || !funder || !payment_asset || !vcs_project_id || !quoteData) {
             console.log(`[${requestId}] ❌ Missing required parameters`);
             return res.status(400).json({
                 error: 'Missing required parameters',
@@ -134,8 +141,8 @@ router.post('/sink-carbon/xdr', async (req: Request, res: Response) => {
         }
 
         // Validate quote data
-        if (!quote.usd_amount || !quote.total_carbon) {
-            console.log(`[${requestId}] ❌ Invalid quote data:`, quote);
+        if (!quoteData.usd_amount || !quoteData.total_carbon) {
+            console.log(`[${requestId}] ❌ Invalid quote data:`, quoteData);
             return res.status(400).json({
                 error: 'Invalid quote data',
                 details: 'Quote must contain usd_amount and total_carbon'
@@ -168,15 +175,15 @@ router.post('/sink-carbon/xdr', async (req: Request, res: Response) => {
 
         try {
             console.log(`[${requestId}] 📊 Using quote values:`, {
-                carbonAmount: quote.total_carbon,
-                usdcAmount: quote.usd_amount
+                carbonAmount: quoteData.total_carbon,
+                usdcAmount: quoteData.usd_amount
             });
 
             const xdrResponse = await carbonAPI.getSinkCarbonXDR({
                 funder,
                 recipient: recipient || funder,
-                carbonAmount: parseFloat(quote.total_carbon),
-                usdcAmount: parseFloat(quote.usd_amount),
+                carbonAmount: parseFloat(quoteData.total_carbon),
+                usdcAmount: parseFloat(quoteData.usd_amount),
                 paymentAsset: payment_asset,
                 vcsProjectId: vcs_project_id
             });

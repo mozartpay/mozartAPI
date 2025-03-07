@@ -10,8 +10,11 @@ import {
 
 export class StellarCarbonAPI {
     private client: AxiosInstance;
+    private isTestnet: boolean;
+    private baseURL: string;
     
     constructor(isTestnet: boolean = true) {
+        this.isTestnet = isTestnet;
         const testnetURL = process.env.STELLAR_CARBON_TESTNET_URL;
         const mainnetURL = process.env.STELLAR_CARBON_MAINNET_URL;
 
@@ -19,10 +22,14 @@ export class StellarCarbonAPI {
             throw new Error('Stellar Carbon API URLs not configured in environment variables');
         }
 
-        const baseURL = isTestnet ? testnetURL : mainnetURL;
+        this.baseURL = isTestnet ? testnetURL : mainnetURL;
+        console.log(`🌐 Initializing Stellar Carbon API:`, {
+            environment: isTestnet ? 'testnet' : 'mainnet',
+            baseURL: this.baseURL
+        });
             
         this.client = axios.create({
-            baseURL,
+            baseURL: this.baseURL,
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
@@ -74,7 +81,20 @@ export class StellarCarbonAPI {
         const response = await this.client.get<SinkCarbonResponse>(`/carbon/sink-carbon?${queryParams}`);
         return response.data;
     }
+
+    // Add getter for current network info
+    public getNetworkInfo() {
+        return {
+            isTestnet: this.isTestnet,
+            baseURL: this.baseURL
+        };
+    }
 }
 
-// Export a singleton instance for convenience
-export const carbonAPI = new StellarCarbonAPI(process.env.NODE_ENV !== 'production');
+// Export a singleton instance
+const isTestnet = process.env.NODE_ENV !== 'production';
+console.log(`🌍 Creating Stellar Carbon API instance:`, {
+    NODE_ENV: process.env.NODE_ENV,
+    isTestnet
+});
+export const carbonAPI = new StellarCarbonAPI(isTestnet);
