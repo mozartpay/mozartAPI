@@ -93,13 +93,12 @@ export class StellarCarbonAPI {
 }
 
 // Export a singleton instance
-const isTestnet = process.env.NODE_ENV !== 'production';
+// TODO: Remove force testnet when ready for mainnet
+const isTestnet = true; // Force testnet for now
 console.log(`🌍 Creating Stellar Carbon API instance:`, {
     NODE_ENV: process.env.NODE_ENV,
     isTestnet,
-    message: isTestnet 
-        ? '⚠️ Using TESTNET (api.stellarcarbon.io/test)' 
-        : '🚀 Using MAINNET (api.stellarcarbon.io)'
+    message: '⚠️ Using TESTNET (api.stellarcarbon.io/test) - Forced testnet mode'
 });
 
 export const carbonAPI = new StellarCarbonAPI(isTestnet);
