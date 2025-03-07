@@ -22,6 +22,8 @@ interface UserDoc extends mongoose.Document {
   token: string;
   number: string;
   verificationCode: string;
+  encryptedPrivateKey: string;
+  iv: string;
   preferences: {
     currency: string;
     network: string;
@@ -54,6 +56,8 @@ const userSchema = new mongoose.Schema<UserDoc>({
   token: String,
   number: String,
   verificationCode: String,
+  encryptedPrivateKey: { type: String },
+  iv: { type: String },
   preferences: {
     type: {
       currency: { type: String, default: 'USD' },

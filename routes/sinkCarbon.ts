@@ -188,7 +188,32 @@ router.post('/sink-carbon/xdr', async (req: Request, res: Response) => {
                 vcsProjectId: vcs_project_id
             });
 
-            return res.json(xdrResponse);
+            // Get the user's private key
+            console.log(`[${requestId}] 🔐 Decrypting private key for user`);
+            const privateKey = await decryptPrivateKey(user.encryptedPrivateKey, user.iv);
+            const sourceKeypair = Keypair.fromSecret(privateKey);
+
+            // Create Horizon server instance based on network
+            const horizonUrl = networkInfo.isTestnet ? 
+                'https://horizon-testnet.stellar.org' : 
+                'https://horizon.stellar.org';
+            const server = new Horizon.Server(horizonUrl);
+
+            // Submit the transaction
+            console.log(`[${requestId}] 🚀 Submitting transaction to Stellar network...`);
+            const transaction = new Transaction(
+                xdrResponse.xdr,
+                networkInfo.isTestnet ? Networks.TESTNET : Networks.PUBLIC
+            );
+            transaction.sign(sourceKeypair);
+
+            const transactionResult = await server.submitTransaction(transaction);
+            console.log(`[${requestId}] ✅ Transaction submitted successfully:`, transactionResult);
+
+            return res.json({
+                success: true,
+                transaction: transactionResult
+            });
         } catch (error: any) {
             console.log(`[${requestId}] ❌ API Error:`, error);
             return res.status(503).json({
