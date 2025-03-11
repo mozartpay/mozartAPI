@@ -55,25 +55,25 @@ interface Balance {
 router.post('/', async (req: Request, res: Response) => {
   try {
     const { email, network = 'testnet', currency } = req.body;
+    console.log('Trustline creation request:', { email, network, currency });
 
     // Validate currency
     if (!currency || !['USDC', 'EURC'].includes(currency)) {
+      console.log('Invalid currency:', currency);
       return res.status(400).json({ error: 'Invalid or missing currency. Must be either USDC or EURC' });
-    }
-
-    // Add network validation
-    if (network && !['mainnet', 'testnet'].includes(network)) {
-      return res.status(400).json({ error: 'Invalid network parameter. Use "mainnet" or "testnet"' });
     }
 
     // Get the appropriate server instance
     const server = getServer(network);
+    console.log('Using network:', network);
 
     // Fetch the user from the database
     const user = await User.findOne({ email });
     if (!user) {
+      console.log('User not found for email:', email);
       return res.status(404).json({ error: 'User not found' });
     }
+    console.log('Found user:', { email, hasMainnetKey: !!user.privateKeyXlmMainnet, hasTestnetKey: !!user.privateKeyXlmTestnet });
 
     // Get and decrypt the network-specific private key
     const privateKey = network === 'mainnet' ? user.privateKeyXlmMainnet : user.privateKeyXlmTestnet;
@@ -86,9 +86,11 @@ router.post('/', async (req: Request, res: Response) => {
 
     // Create the Stellar keypair from the decrypted private key
     const sourceKeypair = StellarSdk.Keypair.fromSecret(decryptedPrivateKey);
+    console.log('Created keypair for public key:', sourceKeypair.publicKey());
 
-    // Load the user's account from the Stellar network
+    // Load the user's account
     const account = await server.loadAccount(sourceKeypair.publicKey());
+    console.log('Loaded account balances:', account.balances);
 
     // USDC asset details - hardcoded since they are public information
     const circleUsdcIssuer = network === 'mainnet' 
@@ -107,9 +109,10 @@ router.post('/', async (req: Request, res: Response) => {
     const hasTrustline = account.balances.some((balance: Balance) => 
       balance.asset_code === currency && balance.asset_issuer === issuer
     );
+    console.log('Trustline status:', { currency, issuer, hasTrustline });
 
-    // If trustline exists, return without making a transaction
     if (hasTrustline) {
+      console.log('Trustline already exists for', currency);
       return res.status(200).json({
         message: `${currency} trustline already exists`,
         publicKey: account.id,
@@ -117,7 +120,8 @@ router.post('/', async (req: Request, res: Response) => {
       });
     }
 
-    // Create transaction for the trustline
+    // Create and submit transaction
+    console.log('Creating new trustline transaction...');
     const transaction = new StellarSdk.TransactionBuilder(account, {
       fee: StellarSdk.BASE_FEE,
       networkPassphrase: network === 'mainnet' ? StellarSdk.Networks.PUBLIC : StellarSdk.Networks.TESTNET,
@@ -131,6 +135,7 @@ router.post('/', async (req: Request, res: Response) => {
     transaction.sign(sourceKeypair);
 
     const result = await server.submitTransaction(transaction);
+    console.log('Trustline transaction successful:', result.hash);
 
     return res.status(200).json({
       message: `${currency} trustline created successfully`,
@@ -140,7 +145,11 @@ router.post('/', async (req: Request, res: Response) => {
     });
   } catch (error) {
     const err = error as Error;
-    console.error('Error creating trustline:', err.message);
+    console.error('Detailed error in trustline creation:', {
+      message: err.message,
+      stack: err.stack,
+      name: err.name
+    });
     return res.status(500).json({ error: err.message });
   }
 });
