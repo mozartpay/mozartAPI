@@ -4,6 +4,7 @@ import { User } from '../models/user';
 import jwt from 'jsonwebtoken';
 import initMB from 'messagebird';
 import dotenv from 'dotenv';
+import rateLimit from 'express-rate-limit';
 
 const router = express.Router();
 dotenv.config({ path: '.env.production' });
@@ -21,7 +22,18 @@ interface MessageBirdError extends Error {
   description?: string;
 }
 
-router.post('/', async (req: Request, res: Response) => {
+// Rate limiter: maximum of 5 requests per 10 minutes per IP for signup endpoints
+const signupLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: 5, // limit each IP to 5 requests per windowMs
+  message: {
+    message: 'Too many requests from this IP, please try again after 10 minutes.'
+  },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
+
+router.post('/', signupLimiter, async (req: Request, res: Response) => {
   try {
     const { email, password, fullname, number } = req.body;
 
@@ -124,7 +136,7 @@ router.post('/', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/verify', async (req: Request, res: Response) => {
+router.post('/verify', signupLimiter, async (req: Request, res: Response) => {
   try {
     const { email, code } = req.body;
 
@@ -152,7 +164,7 @@ router.post('/verify', async (req: Request, res: Response) => {
 });
 
 // Route to resend verification code
-router.post('/resend-code', async (req: Request, res: Response) => {
+router.post('/resend-code', signupLimiter, async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
     

@@ -15,7 +15,7 @@ export class StellarCarbonAPI {
     
     constructor(isTestnet: boolean = true) {
         this.isTestnet = isTestnet;
-        const testnetURL = process.env.STELLAR_CARBON_TESTNET_URL || 'https://api.stellarcarbon.io/test';
+        const testnetURL = process.env.STELLAR_CARBON_TESTNET_URL || 'https://testnet-api.stellarcarbon.io';
         const mainnetURL = process.env.STELLAR_CARBON_MAINNET_URL || 'https://api.stellarcarbon.io';
 
         if (!testnetURL || !mainnetURL) {

@@ -1,6 +1,5 @@
-MozartPay
 
-# General Information
+# MozartPay - General Information
 NETWORK_PASSPHRASE="Public Global Stellar Network ; September 2015"
 FEDERATION_SERVER="https://api.mozartpay.com/federation"
 AUTH_SERVER="https://auth.mozartpay.com"

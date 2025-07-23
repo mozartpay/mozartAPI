@@ -48,10 +48,37 @@ const getNetworkPassphrase = (network: string = 'mainnet'): string => {
 
 // Helper to get the Soroban RPC URL
 export const getSorobanRpcUrl = (network: string = 'mainnet'): string => {
+  // Use Gateway RPC endpoints which support both mainnet and testnet
   return network === 'mainnet'
-    ? 'https://mainnet.sorobanrpc.com'
-    : 'https://testnet.sorobanrpc.com';
+    ? 'https://soroban-rpc.mainnet.stellar.gateway.fm'
+    : 'https://soroban-rpc.testnet.stellar.gateway.fm';
 };
+
+// Get available RPC networks
+router.get('/networks', async (req: express.Request, res: express.Response) => {
+  try {
+    // Define available networks with their RPC endpoints
+    const networks = {
+      mainnet: {
+        name: 'Mainnet',
+        rpcUrl: 'https://soroban-rpc.mainnet.stellar.gateway.fm',
+        description: 'Stellar mainnet production network'
+      },
+      testnet: {
+        name: 'Testnet',
+        rpcUrl: 'https://soroban-rpc.testnet.stellar.gateway.fm',
+        description: 'Stellar testnet for development and testing'
+      }
+    };
+    
+    return res.status(200).json({
+      networks
+    });
+  } catch (error: any) {
+    console.error('Error getting RPC networks:', error);
+    return res.status(500).json({ error: error.message });
+  }
+});
 
 // Deploy agreement as smart contract
 router.post('/deploy', async (req: express.Request, res: express.Response) => {
