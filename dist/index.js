@@ -63,7 +63,7 @@ app.use((req, res, next) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 24 * 60 * 60 * 1000,
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
         path: '/',
         domain: process.env.NODE_ENV === 'production' ? '.mozartpay.com' : 'localhost'
     });
@@ -95,21 +95,21 @@ app.use('/api/oas', oas_1.default);
 app.use('/api/withdraw', withdraw_1.default);
 app.use('/api', order_1.default);
 app.use('/api/profile', profile_1.default);
-app.use('/api', subscription_1.default);
+app.use('/api/subscription', subscription_1.default);
 app.use('/api', convert_1.default);
-app.use('/api', sendMoney_1.default);
-app.use('/api', requestMoney_1.default);
+app.use('/api/send', sendMoney_1.default);
+app.use('/api/request', requestMoney_1.default);
 app.use('/api', identity_1.default);
 app.use('/api/stellar/trustline', trustline_1.default);
 app.use('/api/user/balance', balance_1.default);
 app.use('/api/xlm', xlm_1.default);
-app.use('/api', notification_1.default);
-app.use('/api', swap_1.default);
-app.use('/api', fireblocks_1.default);
-app.use('/api', soroban_1.default);
-app.use('/api', sinkCarbon_1.default);
-app.use('/api', oracle_1.default);
-app.use('/api', cookies_1.default);
+app.use('/api/notification', notification_1.default);
+app.use('/api/swap', swap_1.default);
+app.use('/api/fireblocks', fireblocks_1.default);
+app.use('/api/soroban', soroban_1.default);
+app.use('/api/carbon', sinkCarbon_1.default);
+app.use('/api/oracle', oracle_1.default);
+app.use('/api/cookies', cookies_1.default);
 app.use('/api/signup', signup_1.default);
 app.use('/api/signin', signin_1.default);
 // Start the server

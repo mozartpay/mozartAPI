@@ -27,6 +27,8 @@ const userSchema = new mongoose_1.default.Schema({
     token: String,
     number: String,
     verificationCode: String,
+    encryptedPrivateKey: { type: String },
+    iv: { type: String },
     preferences: {
         type: {
             currency: { type: String, default: 'USD' },

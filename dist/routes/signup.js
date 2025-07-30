@@ -9,10 +9,21 @@ const user_1 = require("../models/user");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const messagebird_1 = __importDefault(require("messagebird"));
 const dotenv_1 = __importDefault(require("dotenv"));
+const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const router = express_1.default.Router();
 dotenv_1.default.config({ path: '.env.production' });
 router.use(express_1.default.json());
-router.post('/', async (req, res) => {
+// Rate limiter: maximum of 5 requests per 10 minutes per IP for signup endpoints
+const signupLimiter = (0, express_rate_limit_1.default)({
+    windowMs: 10 * 60 * 1000, // 10 minutes
+    max: 5, // limit each IP to 5 requests per windowMs
+    message: {
+        message: 'Too many requests from this IP, please try again after 10 minutes.'
+    },
+    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
+router.post('/', signupLimiter, async (req, res) => {
     try {
         const { email, password, fullname, number } = req.body;
         // Add phone number validation
@@ -100,7 +111,7 @@ router.post('/', async (req, res) => {
         return res.status(500).json({ message: 'Internal server error. Please try again later.' });
     }
 });
-router.post('/verify', async (req, res) => {
+router.post('/verify', signupLimiter, async (req, res) => {
     try {
         const { email, code } = req.body;
         // Find the user by email
@@ -125,7 +136,7 @@ router.post('/verify', async (req, res) => {
     }
 });
 // Route to resend verification code
-router.post('/resend-code', async (req, res) => {
+router.post('/resend-code', signupLimiter, async (req, res) => {
     try {
         const { email } = req.body;
         if (!email) {

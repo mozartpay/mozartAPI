@@ -10,7 +10,7 @@ const app = (0, express_1.default)();
 const router = express_1.default.Router();
 // Enable CORS for specific origin and allow credentials
 app.use((0, cors_1.default)({
-    origin: ['http://localhost:3000', 'http://localhost:5173'],
+    origin: ['http://localhost:3000', 'http://localhost:5173'], // Allow requests from your frontend origin
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Access-Control-Allow-Origin'],
     credentials: true, // Allow credentials (cookies, authentication headers, etc.)
